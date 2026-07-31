@@ -179,6 +179,11 @@ src/.DS_Store
 
 # Smithery build artifact
 server.mcpb
+
+# Internal working reference docs (not for repo)
+docs/api_spec/
+docs/*.xlsx
+docs/*.hwp
 */.DS_Store
 **/.DS_Store
 **/**/.DS_Store
