@@ -35,18 +35,27 @@
 - **`api/foreign/`**: 해외 특허 검색 API (15개국 지원)
 
 #### MCP 툴
-- **`tools/korean/`**: 한국 특허 검색 툴 (6개)
+- **`tools/korean/`**: 한국 특허·상표 검색 툴 (11개)
 - **`tools/foreign/`**: 해외 특허 검색 툴 (5개)
 
 ### 2. 주요 기능
 
-#### 한국 특허 검색 (6개 툴)
+#### 한국 특허 검색 (10개 툴)
 1. **출원인 검색** (`patent_applicant_search`)
-2. **키워드 검색** (`patent_keyword_search`)
-3. **출원번호 검색** (`patent_application_number_search`)
-4. **권리자 검색** (`patent_righter_search`)
-5. **요약 정보 검색** (`patent_summary_search`)
-6. **상세 정보 검색** (`patent_detail_search`)
+2. **키워드(자유 텍스트) 검색** (`patent_free_search`)
+3. **출원번호 검색** (`patent_search`)
+4. **출원번호 검색** (`patent_application_number_search`)
+5. **권리자 검색** (`patent_righter_search`)
+6. **요약 정보 검색** (`patent_summary_search`)
+7. **상세 정보 검색** (`patent_detail_search`)
+8. **초록 검색** (`abstract_search`) — *[@haseo-ai](https://github.com/haseo-ai) 기여*
+9. **IPC 분류 코드 검색** (`ipc_search`) — *[@haseo-ai](https://github.com/haseo-ai) 기여*
+10. **대리인 검색** (`agent_search`) — *[@haseo-ai](https://github.com/haseo-ai) 기여*
+
+> `patent_search`와 `patent_application_number_search`는 둘 다 출원번호로 검색하는 툴로, 기능이 겹칩니다. 정리 대상 후보.
+
+#### 한국 상표 검색 (1개 툴)
+1. **상표 검색** (`trademark_search`) — *[@haseo-ai](https://github.com/haseo-ai) 기여*
 
 #### 해외 특허 검색 (5개 툴)
 1. **출원인 검색** (`foreign_patent_applicant_search`)
@@ -176,7 +185,7 @@ pyright>=1.1.398
 ├── 소스 코드 (90+ 파일)
 │   ├── 서버 파일 (2개)
 │   ├── API 클라이언트 (20+ 파일)
-│   ├── 툴 구현 (11개)
+│   ├── 툴 구현 (16개)
 │   └── 유틸리티 (4개)
 └── Docker 파일 (2개)
     ├── Dockerfile.stdio
@@ -225,10 +234,10 @@ LOG_LEVEL=INFO  # 프로덕션 환경
 ## 🔍 현재 상태 분석
 
 ### ✅ 완료된 기능
-1. **MCP 서버 구현**: stdio 및 HTTP(SSE) 모드
-2. **한국 특허 검색**: 6개 완전한 툴 구현
+1. **MCP 서버 구현**: stdio 및 HTTP(SSE) 모드, 두 모드 모두 동일한 16개 툴 등록(양쪽 불일치 버그 수정됨)
+2. **한국 특허·상표 검색**: 11개 완전한 툴 구현 (특허 10개 + 상표 1개)
 3. **해외 특허 검색**: 5개 완전한 툴 구현
-4. **보안 강화**: API 키 마스킹, Rate limiting
+4. **보안 강화**: API 키 마스킹(요청 로그 경로까지 실제 적용), Rate limiting(실제 요청 경로에 연결됨)
 5. **안정성 개선**: 재시도/백오프 메커니즘
 6. **성능 최적화**: 비동기 처리, 클라이언트 캐싱
 
@@ -273,6 +282,6 @@ LOG_LEVEL=INFO  # 프로덕션 환경
 
 ## 🎯 결론
 
-MCP KIPRIS 프로젝트는 **프로덕션 레벨의 안정성과 보안성**을 갖춘 특허 검색 MCP 서버입니다. **11개의 완전한 툴**과 **15개국 해외 특허 지원**을 통해 강력한 특허 검색 기능을 제공하며, **최신 보안 기능과 안정성 메커니즘**으로 실제 운영 환경에서도 신뢰성 있는 서비스를 보장합니다.
+MCP KIPRIS 프로젝트는 **프로덕션 레벨의 안정성과 보안성**을 갖춘 특허 검색 MCP 서버입니다. **16개의 완전한 툴**(한국 특허·상표 11개 + 해외 특허 5개)과 **15개국 해외 특허 지원**을 통해 강력한 특허 검색 기능을 제공하며, **최신 보안 기능과 안정성 메커니즘**으로 실제 운영 환경에서도 신뢰성 있는 서비스를 보장합니다.
 
 현재 프로젝트는 안정적인 상태를 유지하고 있으며, 지속적인 개선을 통해 더욱 강력한 특허 검색 솔루션으로 발전할 잠재력을 가지고 있습니다.
