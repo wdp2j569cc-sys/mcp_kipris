@@ -65,7 +65,7 @@ _register(
 )
 _register({"ipcNumber": "ipcNumber", "ipcDate": "ipcDate"}, "ipcInfoArray", "ipcInfo")
 _register({"familyApplicationNumber": "familyApplicationNumber"}, "familyInfoArray", "familyInfo")
-_register({"astrtCont": "astrtCont"}, "abstractInfoArray", "abstractInfo", sep="\n\n")
+_register({"astrtCont": "astrtCont"}, "abstractInfoArray", "abstractInfo", sep=" ")
 _register(
     {
         "internationOpenDate": "internationOpenDate",
@@ -76,7 +76,7 @@ _register(
     "internationalInfoArray",
     "internationalInfo",
 )
-_register({"claim": "claim"}, "claimInfoArray", "claimInfo", sep="\n\n")
+_register({"claim": "claim"}, "claimInfoArray", "claimInfo", sep=" ")
 _register(
     {
         "applicantName": "name",
@@ -176,13 +176,23 @@ def _as_list(value: t.Any) -> t.List[t.Any]:
     return value if isinstance(value, list) else [value]
 
 
+def _clean_cell(value: t.Any) -> str:
+    """A raw newline inside a single-row markdown table cell breaks the
+    table into extra rows with misaligned columns (confirmed against a
+    live KIPRIS response where a multi-claim `claim` field did exactly
+    this). Flatten any embedded newlines before the value ever reaches
+    to_markdown().
+    """
+    return str(value).replace("\r\n", " ").replace("\n", " ").strip()
+
+
 def _extract_field(item: t.Dict, array_key: str, item_key: str, source_field: str, sep: str) -> t.Optional[str]:
     array_node = item.get(array_key)
     if not isinstance(array_node, dict):
         return None
 
     values = [
-        str(entry[source_field])
+        _clean_cell(entry[source_field])
         for entry in _as_list(array_node.get(item_key))
         if isinstance(entry, dict) and entry.get(source_field) not in (None, "")
     ]
@@ -192,6 +202,19 @@ def _extract_field(item: t.Dict, array_key: str, item_key: str, source_field: st
 def _select_fields(item: t.Dict, fields: t.List[str]) -> pd.DataFrame:
     row = {field: _extract_field(item, *_FIELD_REGISTRY[field]) for field in fields}
     return pd.DataFrame([row]).fillna("")
+
+
+def _item_has_data(item: t.Dict) -> bool:
+    """For an application number KIPRIS doesn't recognize, the API still
+    returns HTTP 200 / resultCode 00 with response.body.item present but
+    every group (biblioSummaryInfoArray included) set to null — parse_response
+    turns that into a 1-row DataFrame that is *not* .empty, so the emptiness
+    check alone misses it and the tool would render an all-blank table
+    instead of "there is no result" (confirmed against the live API with a
+    bogus application number). biblioSummaryInfo is present on every real
+    patent, so its absence is what actually signals no result.
+    """
+    return isinstance(item.get("biblioSummaryInfoArray"), dict)
 
 
 class PatentDetailSearchArgs(BaseModel):
@@ -272,6 +295,9 @@ class PatentDetailSearchTool(ToolHandler):
                 return [TextContent(type="text", text="there is no result")]
 
             item = response.iloc[0].to_dict()
+            if not _item_has_data(item):
+                return [TextContent(type="text", text="there is no result")]
+
             summary_df = _select_fields(item, validated_args.fields or _DEFAULT_FIELDS)
             return [TextContent(type="text", text=summary_df.to_markdown(index=False))]
 
@@ -294,6 +320,9 @@ class PatentDetailSearchTool(ToolHandler):
                 return [TextContent(type="text", text="there is no result")]
 
             item = response.iloc[0].to_dict()
+            if not _item_has_data(item):
+                return [TextContent(type="text", text="there is no result")]
+
             summary_df = _select_fields(item, validated_args.fields or _DEFAULT_FIELDS)
             return [TextContent(type="text", text=summary_df.to_markdown(index=False))]
 

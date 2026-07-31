@@ -17,6 +17,7 @@ from mcp_kipris.kipris.tools.korean.patent_detail_search_tool import (
     _ALL_FIELDS,
     _DEFAULT_FIELDS,
     _extract_field,
+    _item_has_data,
     PatentDetailSearchTool,
 )
 
@@ -66,6 +67,14 @@ def test_extract_field_returns_none_when_group_absent():
 
 def test_extract_field_returns_none_when_source_field_absent():
     assert _extract_field(_SAMPLE_ITEM, "applicantInfoArray", "applicantInfo", "engName", ", ") is None
+
+
+def test_item_has_data_true_for_a_real_item():
+    assert _item_has_data(_SAMPLE_ITEM) is True
+
+
+def test_item_has_data_false_when_biblio_summary_is_null():
+    assert _item_has_data({"biblioSummaryInfoArray": None, "ipcInfoArray": None}) is False
 
 
 # --- tool-level behavior -----------------------------------------------
@@ -133,6 +142,47 @@ def test_empty_response_returns_no_result_message(monkeypatch):
     result = tool.run_tool({"application_number": "1020230000001"})
 
     assert result[0].text == "there is no result"
+
+
+def test_unrecognized_application_number_returns_no_result_message(monkeypatch):
+    """For an application number KIPRIS doesn't recognize, the live API
+    returns HTTP 200 / resultCode 00 with every group under item set to
+    null rather than an error — parse_response turns that into a non-empty
+    1-row DataFrame, so `response.empty` alone doesn't catch it (confirmed
+    against the real API). Without this check the tool used to render an
+    all-blank table instead of reporting no result.
+    """
+    tool = PatentDetailSearchTool()
+    all_null_item = {
+        "biblioSummaryInfoArray": None,
+        "ipcInfoArray": None,
+        "abstractInfoArray": None,
+        "applicantInfoArray": None,
+        "claimInfoArray": None,
+    }
+    monkeypatch.setattr(tool.api, "sync_search", lambda **kwargs: pd.DataFrame([all_null_item]))
+
+    result = tool.run_tool({"application_number": "9999999999999"})
+
+    assert result[0].text == "there is no result"
+
+
+def test_multi_value_fields_join_without_embedding_raw_newlines(monkeypatch):
+    """A joined multi-entry field (claim, astrtCont) must not contain a
+    literal newline: pandas/tabulate's to_markdown() renders an embedded
+    newline as extra, misaligned table rows instead of keeping it in one
+    cell — confirmed against a real patent with 7 claims, where the old
+    "\\n\\n" separator broke the table into 13 garbled rows.
+    """
+    tool = PatentDetailSearchTool()
+    monkeypatch.setattr(tool.api, "sync_search", lambda **kwargs: _mock_response())
+
+    text = tool.run_tool({"application_number": "1020230000001", "fields": ["claim"]})[0].text
+
+    # header + separator + exactly one data row == 3 lines; any more means
+    # the joined value leaked a newline into the table body.
+    assert len(text.strip().splitlines()) == 3
+    assert "청구항 1 청구항 2" in text
 
 
 def test_tool_description_advertises_the_full_field_set():
