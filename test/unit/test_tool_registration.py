@@ -29,7 +29,8 @@ def test_stdio_server_registers_at_least_the_known_tool_set():
 
     expected_minimum = {
         "patent_applicant_search",
-        "patent_search",
+        "patent_search",  # deprecated alias of patent_advanced_search, kept for backward compatibility
+        "patent_advanced_search",
         "patent_righter_search",
         "patent_application_number_search",
         "patent_summary_search",

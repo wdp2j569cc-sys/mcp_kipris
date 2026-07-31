@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import typing as t
+import warnings
 from collections.abc import Sequence
 
 import pandas as pd
@@ -18,16 +19,46 @@ api_key = os.getenv("KIPRIS_API_KEY")
 if not api_key:
     raise ValueError("KIPRIS_API_KEY environment variable required.")
 
+# Raw KIPRIS field names (from the getAdvancedSearch response) mapped to the
+# same PascalCase column names patent_application_number_search returns, so
+# both tools' tables look the same regardless of which KIPRIS service
+# actually answered the query.
+_OUTPUT_COLUMN_MAP = {
+    "applicationNumber": "ApplicationNumber",
+    "applicationDate": "ApplicationDate",
+    "inventionTitle": "InventionName",
+    "applicantName": "Applicant",
+}
+_OUTPUT_COLUMNS = list(_OUTPUT_COLUMN_MAP.values())
 
-class PatentSearchArgs(BaseModel):
+
+class PatentAdvancedSearchArgs(BaseModel):
     application_number: str = Field(..., description="Application number, it must be filled")
 
 
-class PatentSearchTool(ToolHandler):
-    def __init__(self):
-        super().__init__("patent_search")
+def _format_response(response: pd.DataFrame) -> Sequence[TextContent]:
+    if response.empty:
+        return [TextContent(type="text", text="검색 결과가 없습니다.")]
+
+    summary_df = response.rename(columns=_OUTPUT_COLUMN_MAP)[_OUTPUT_COLUMNS].copy()
+    return [TextContent(type="text", text=summary_df.to_markdown(index=False))]
+
+
+class PatentAdvancedSearchTool(ToolHandler):
+    """Wraps KIPRIS's getAdvancedSearch service, looked up here by application
+    number. This is a different KIPRIS endpoint from
+    patent_application_number_search (applicationNumberSearchInfo) — the two
+    are not interchangeable at the API level, but their output tables use the
+    same column names for consistency.
+    """
+
+    def __init__(self, tool_name: str = "patent_advanced_search"):
+        super().__init__(tool_name)
         self.api = PatentSearchAPI(api_key=api_key)
-        self.description = "patent search by application number, this tool is for korean patent search"
+        self.description = (
+            "patent search by application number via KIPRIS's advanced search service, "
+            "this tool is for korean patent search"
+        )
 
     def get_tool_description(self) -> Tool:
         return Tool(
@@ -49,32 +80,49 @@ class PatentSearchTool(ToolHandler):
         )
 
     def run_tool(self, args: dict) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
-        validated_args = PatentSearchArgs(**args)
+        validated_args = PatentAdvancedSearchArgs(**args)
         logger.info(f"application_number: {validated_args.application_number}")
 
         response = self.api.sync_search(word="", application_number=validated_args.application_number)
-
-        # 검색 결과가 없는 경우 처리
-        if response.empty:
-            return [TextContent(type="text", text="검색 결과가 없습니다.")]
-
-        summary_df = response[
-            ["applicationNumber", "applicationDate", "inventionTitle", "applicantName", "registerStatus"]
-        ].copy()
-        return [TextContent(type="text", text=summary_df.to_markdown(index=False))]
+        return _format_response(response)
 
     async def run_tool_async(self, args: dict) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
         """특허 검색 비동기 실행 메서드"""
-        validated_args = PatentSearchArgs(**args)
+        validated_args = PatentAdvancedSearchArgs(**args)
         logger.info(f"application_number: {validated_args.application_number}")
 
         response = await self.api.async_search(word="", application_number=validated_args.application_number)
+        return _format_response(response)
 
-        # 검색 결과가 없는 경우 처리
-        if response.empty:
-            return [TextContent(type="text", text="검색 결과가 없습니다.")]
 
-        summary_df = response[
-            ["applicationNumber", "applicationDate", "inventionTitle", "applicantName", "registerStatus"]
-        ].copy()
-        return [TextContent(type="text", text=summary_df.to_markdown(index=False))]
+class PatentSearchTool(PatentAdvancedSearchTool):
+    """Deprecated alias for PatentAdvancedSearchTool under its old name
+    ('patent_search'). Kept registered for backward compatibility; scheduled
+    for removal in a future major version. New integrations should use
+    patent_advanced_search instead.
+    """
+
+    def __init__(self):
+        super().__init__(tool_name="patent_search")
+        warnings.warn(
+            "PatentSearchTool ('patent_search') is deprecated and will be removed in a future major "
+            "version; use PatentAdvancedSearchTool ('patent_advanced_search') instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.description = (
+            "[DEPRECATED — renamed to patent_advanced_search; this alias will be removed in a "
+            "future major version] " + self.description
+        )
+
+    def get_tool_description(self) -> Tool:
+        tool = super().get_tool_description()
+        metadata = dict(tool.metadata or {})
+        metadata.update(
+            {
+                "deprecated": True,
+                "replacement_tool": "patent_advanced_search",
+                "removal_notice": "Scheduled for removal in a future major version; kept for backward compatibility.",
+            }
+        )
+        return tool.model_copy(update={"metadata": metadata})

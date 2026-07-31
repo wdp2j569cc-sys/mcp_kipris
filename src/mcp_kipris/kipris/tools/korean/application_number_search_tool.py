@@ -83,7 +83,8 @@ class PatentApplicationNumberSearchTool(ToolHandler):
             if response.empty:
                 return [TextContent(type="text", text="there is no result")]
 
-            return [TextContent(type="text", text=response.to_markdown(index=False))]
+            summary_df = response[["ApplicationNumber", "ApplicationDate", "InventionName", "Applicant"]].copy()
+            return [TextContent(type="text", text=summary_df.to_markdown(index=False))]
 
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")
