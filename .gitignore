@@ -180,6 +180,11 @@ src/.DS_Store
 # Smithery build artifact
 server.mcpb
 
+# setuptools-scm generated version file — must not be tracked, or rewriting
+# it during a build makes the tree "dirty" and setuptools-scm stops
+# reporting a clean tag version (see pypa/setuptools-scm#468)
+src/mcp_kipris/_version.py
+
 # Internal working reference docs (not for repo)
 docs/api_spec/
 docs/*.xlsx
