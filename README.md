@@ -267,7 +267,7 @@ Every push and pull request to `main` / `develop` runs the full pipeline on **Py
 |------|------|-------|
 | Lint | `ruff check` | PEP 8 + style rules |
 | Format | `ruff format --check` | Enforces consistent formatting |
-| Test | `pytest` | Live API calls; requires `KIPRIS_API_KEY` secret |
+| Test | `pytest` | Mostly mocked unit tests, plus one live-API integration test; requires `KIPRIS_API_KEY` secret |
 | Coverage | Codecov | Report uploaded from Python 3.12 run |
 
 ---
@@ -420,9 +420,9 @@ The `KIPRIS_API_KEY` for CI is stored as a GitHub Secret — you do not need to 
 
 Special thanks to **[@haseo-ai](https://github.com/haseo-ai)** for 5 pull requests that significantly expanded this project:
 
-- **Abstract search** (`PatentAbstractSearchTool`) — search patents by invention abstract
-- **IPC code search** (`PatentIPCSearchTool`) — search by international classification code
-- **Agent search** (`PatentAgentSearchTool`) — search by registered patent agent name
+- **Abstract search** (`AbstractSearchTool`) — search patents by invention abstract
+- **IPC code search** (`IpcSearchTool`) — search by international classification code
+- **Agent search** (`AgentSearchTool`) — search by registered patent agent name
 - **Trademark search** (`TrademarkSearchTool`) — Korean trademark keyword search
 - **Improved API error handling** — more robust error management for KIPRIS API responses
 

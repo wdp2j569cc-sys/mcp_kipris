@@ -144,6 +144,7 @@ Claude Desktop의 `claude_desktop_config.json`에 다음을 추가하세요:
     "kipris": {
       "command": "uv",
       "args": ["run", "python", "-m", "mcp_kipris.server"],
+      "cwd": "/absolute/path/to/mcp_kipris",
       "env": {
         "KIPRIS_API_KEY": "your_api_key_here"
       }
@@ -219,7 +220,7 @@ CI 파이프라인은 `main` / `develop` 브랜치의 모든 push 및 PR에서 *
 |------|------|------|
 | 린트 | `ruff check` | PEP 8 + 스타일 규칙 |
 | 포맷 | `ruff format --check` | 일관된 코드 포맷 |
-| 테스트 | `pytest` | 실제 API 호출 + 커버리지 |
+| 테스트 | `pytest` | 대부분 mock 기반 단위 테스트 + 라이브 API 통합 테스트 1개; `KIPRIS_API_KEY` 시크릿 필요 |
 | 커버리지 | Codecov | Python 3.12 실행 결과 업로드 |
 
 ---
@@ -364,9 +365,9 @@ curl -N http://localhost:6274/messages/
 
 **[@haseo-ai](https://github.com/haseo-ai)** 님의 5개 PR 기여로 이 프로젝트가 크게 발전했습니다:
 
-- **초록 검색** (`PatentAbstractSearchTool`) — 발명의 개요로 특허 검색
-- **IPC 코드 검색** (`PatentIPCSearchTool`) — 국제특허분류 코드로 검색
-- **대리인 검색** (`PatentAgentSearchTool`) — 특허 대리인명으로 검색
+- **초록 검색** (`AbstractSearchTool`) — 발명의 개요로 특허 검색
+- **IPC 코드 검색** (`IpcSearchTool`) — 국제특허분류 코드로 검색
+- **대리인 검색** (`AgentSearchTool`) — 특허 대리인명으로 검색
 - **상표 검색** (`TrademarkSearchTool`) — 한국 상표 검색
 - **API 에러 핸들링 개선** — KIPRIS API 오류 처리 강화
 
