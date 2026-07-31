@@ -1,6 +1,20 @@
 # MCP Kipris Test Directory
 
-이 디렉토리는 mcp_kipris 패키지의 각 기능을 테스트하는 스크립트를 포함하고 있습니다.
+이 디렉토리는 두 종류의 테스트를 포함합니다.
+
+- **`unit/`** — 실제 네트워크 호출 없이 동작하는 pytest 단위 테스트. `KIPRIS_API_KEY`가 없어도 실행되며(`conftest.py`가 더미 값을 채워줌), `pytest.mark.unit`로 마킹되어 있습니다. KIPRIS API를 호출하는 부분은 `monkeypatch`로 목(mock) 처리합니다.
+- **루트의 `test_*.py`** — 실제 KIPRIS API를 호출하는 라이브 테스트/데모 스크립트. `pytest.mark.integration`로 마킹된 것은 `pytest`로 수집되어 실행되고, 나머지는 `if __name__ == "__main__":` 가드가 걸린 독립 실행 스크립트입니다.
+
+```bash
+# 단위 테스트만 실행 (네트워크 불필요, 빠름)
+pytest test/unit -v
+
+# integration 테스트 제외하고 전체 실행
+pytest test/ -m "not integration" -v
+
+# 커버리지 포함 전체 실행 (CI와 동일, KIPRIS_API_KEY 필요)
+pytest test/ -v --cov=src/mcp_kipris --cov-report=term-missing
+```
 
 ## 테스트 파일 목록
 

@@ -3,6 +3,7 @@ import pytest
 from mcp_kipris.kipris.tools.korean.applicant_search_tool import PatentApplicantSearchTool
 
 
+@pytest.mark.integration
 @pytest.mark.asyncio
 async def test_run_tool_async_with_valid_input():
     tool = PatentApplicantSearchTool()
