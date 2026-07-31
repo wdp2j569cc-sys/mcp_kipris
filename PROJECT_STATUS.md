@@ -255,6 +255,8 @@ LOG_LEVEL=INFO  # 프로덕션 환경
 - `rate_limiter.py`의 `wait_if_rate_limited()`가 정의되지 않은 `logger`를 참조해 rate limit 발동 시 `NameError`로 죽음 → `logging` import 및 모듈 로거 추가
 - `api_client_factory.py`가 존재하지 않는 모듈(`patent_agent_search_api`)을 import해 아예 import 자체가 실패함(이 모듈은 현재 다른 코드에서 쓰이지 않아 아무도 못 잡아냈던 것으로 보임) → 올바른 모듈/클래스명(`agent_search_api.AgentSearchAPI`)으로 수정
 - `ApiClientFactory.get_all_clients()`가 한국/해외 클라이언트 딕셔너리를 단순 병합해 키 이름이 겹치는 3개(`applicant_search`, `free_search`, `application_number_search`) 한국 클라이언트가 해외 클라이언트에 덮어써짐 → `korean_`/`foreign_` 접두사로 네임스페이스 분리
+- (실제 KIPRIS API로 라이브 검증 중 발견) `patent_detail_search`에서 `claim`/`astrtCont`처럼 여러 항목을 `"\n\n"`으로 합친 필드가 마크다운 표 셀 안에 개행 문자를 그대로 포함해, 청구항 7개짜리 실제 특허로 테스트하니 표가 13줄짜리 깨진 표로 렌더링됨 → 구분자를 공백으로 바꾸고 원본 텍스트의 개행도 정리
+- (동일 라이브 검증) 존재하지 않는 출원번호로 조회하면 KIPRIS가 에러 없이 `resultCode=00`과 함께 모든 필드가 `null`인 `item`을 반환해, 기존 `response.empty` 체크로는 못 잡고 빈 값으로 채워진 표가 나감 → `biblioSummaryInfoArray`(모든 정상 특허에 존재) 부재 여부로 "결과 없음"을 판별하는 `_item_has_data()` 추가
 
 ### 🔄 진행 중인 작업
 - ~~LSP 오류 해결 (의존성 문제)~~ ✅ 해결됨
