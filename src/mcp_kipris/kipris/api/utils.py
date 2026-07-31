@@ -10,6 +10,8 @@ import httpx
 import requests
 import xmltodict
 
+from mcp_kipris.kipris.logging_utils import redact_sensitive_data
+
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
     level=logging.INFO,  # INFO 레벨을 출력
@@ -51,7 +53,7 @@ def get_response(url: str) -> t.Dict:
 
         # 타임아웃 설정 (연결 시도: 60초, 응답 대기: 600초)
         # 총 타임아웃: 10분 (MCP 서버 타임아웃보다 길게 설정)
-        logger.info(f"HTTP 요청 시작: {url}")
+        logger.info(f"HTTP 요청 시작: {redact_sensitive_data(url)}")
         start_time = datetime.datetime.now()
 
         response = None  # Initialize to avoid scope issues
@@ -68,10 +70,14 @@ def get_response(url: str) -> t.Dict:
         try:
             dict_type = xmltodict.parse(response_text)
         except ExpatError:
-            raise Exception("response is not xml check query url [%s] response [%s]", url, response_text[0:100])
+            raise Exception(
+                "response is not xml check query url [%s] response [%s]",
+                redact_sensitive_data(url),
+                response_text[0:100],
+            )
         json_data = json.loads(json.dumps(dict_type))
         result_header = get_nested_key_value(json_data, "response.header", default_value="")
-        logger.info("__kipris__:[%s]:[%s] :result header : [%s]", key_str, url[24:], result_header)
+        logger.info("__kipris__:[%s]:[%s] :result header : [%s]", key_str, redact_sensitive_data(url), result_header)
         return json_data
 
     except requests.exceptions.Timeout as e:
@@ -88,7 +94,7 @@ def get_response(url: str) -> t.Dict:
         return {}
     except Exception as e:
         logger.error("Exception Error:[%s]", e)
-        logger.error("url error [%s]", url)
+        logger.error("url error [%s]", redact_sensitive_data(url))
         if response is not None:
             logger.error("response error [%s]", response)
         logger.error(traceback.format_exc())
@@ -101,7 +107,7 @@ async def get_response_async(url: str) -> t.Dict:
     response = None
     try:
         key_str = datetime.datetime.strftime(datetime.datetime.now(), "%H:%M:%S")
-        logger.info(f"[async] HTTP 요청 시작: {url}")
+        logger.info(f"[async] HTTP 요청 시작: {redact_sensitive_data(url)}")
         start_time = datetime.datetime.now()
 
         async with httpx.AsyncClient(timeout=httpx.Timeout(600.0, connect=60.0)) as client:
@@ -116,11 +122,16 @@ async def get_response_async(url: str) -> t.Dict:
         try:
             dict_type = xmltodict.parse(response_text)
         except ExpatError:
-            raise Exception(f"[async] response is not xml. check query url [{url}] response [{response_text[:100]}]")
+            raise Exception(
+                f"[async] response is not xml. check query url [{redact_sensitive_data(url)}] "
+                f"response [{response_text[:100]}]"
+            )
 
         json_data = json.loads(json.dumps(dict_type))
         result_header = get_nested_key_value(json_data, "response.header", default_value="")
-        logger.info("__kipris__:[async][%s]:[%s] :result header : [%s]", key_str, url[24:], result_header)
+        logger.info(
+            "__kipris__:[async][%s]:[%s] :result header : [%s]", key_str, redact_sensitive_data(url), result_header
+        )
         return json_data
 
     except httpx.TimeoutException as e:
@@ -131,7 +142,7 @@ async def get_response_async(url: str) -> t.Dict:
         return {}
     except Exception as e:
         logger.error(f"[async] Exception Error:[{e}]")
-        logger.error(f"[async] url error [{url}]")
+        logger.error(f"[async] url error [{redact_sensitive_data(url)}]")
         if response is not None:
             logger.error(f"[async] response error [{response}]")
         logger.error(traceback.format_exc())

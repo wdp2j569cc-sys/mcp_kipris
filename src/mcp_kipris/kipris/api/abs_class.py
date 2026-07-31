@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 from stringcase import camelcase
 
 from mcp_kipris.kipris.api.utils import get_nested_key_value, get_response, get_response_async
+from mcp_kipris.kipris.logging_utils import redact_sensitive_data
+from mcp_kipris.kipris.rate_limiter import wait_if_rate_limited, wait_if_rate_limited_sync
 
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
@@ -47,10 +49,11 @@ class ABSKiprisAPI:
         """
 
         try:
+            wait_if_rate_limited_sync()
             params_dict = {camelcase(k): v for k, v in params.items() if v is not None and v != ""}
             params_dict[api_key_field] = self.api_key
             full_url = f"{api_url}?{urlencode(params_dict)}"
-            logger.info(f"KIPRIS 요청 URL: {full_url}")
+            logger.info(f"KIPRIS 요청 URL: {redact_sensitive_data(full_url)}")
             return get_response(full_url)
         except Exception as e:
             logger.error(f"KIPRIS 요청 실패: {e}")
@@ -69,11 +72,11 @@ class ABSKiprisAPI:
             dict: 응답 데이터
         """
         try:
+            await wait_if_rate_limited()
             params_dict = {camelcase(k): v for k, v in params.items() if v is not None and v != ""}
             params_dict[api_key_field] = self.api_key
             full_url = f"{api_url}?{urlencode(params_dict)}"
-            print(full_url)
-            logger.info(f"[async] KIPRIS 요청 URL: {full_url}")
+            logger.info(f"[async] KIPRIS 요청 URL: {redact_sensitive_data(full_url)}")
             return await get_response_async(full_url)
         except Exception as e:
             logger.error(f"[async] KIPRIS 요청 실패: {e}")

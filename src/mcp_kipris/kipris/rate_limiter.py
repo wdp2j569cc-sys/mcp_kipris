@@ -6,6 +6,7 @@ Implements token bucket algorithm to prevent API throttling.
 import asyncio
 import logging
 import threading
+import time
 from typing import Optional
 from collections import deque
 from datetime import datetime, timedelta
@@ -151,13 +152,32 @@ def get_rate_limiter(max_requests_per_minute: int = 60) -> RateLimiter:
     return _rate_limiter
 
 
+_POLL_INTERVAL_SECONDS = 1.0
+
+
 async def wait_if_rate_limited() -> None:
     """
-    Wait if rate limited. Should be called before making API requests.
+    Wait if rate limited, then record the request. Must be called
+    immediately before making an API request (see ABSKiprisAPI.async_call).
     """
     rate_limiter = get_rate_limiter()
 
     while not rate_limiter.can_make_request():
-        wait_time = 60.0  # Wait 1 second before checking again
-        logger.warning(f"Rate limit reached. Waiting {wait_time:.1f} seconds before next request.")
-        await asyncio.sleep(wait_time)
+        logger.warning(f"Rate limit reached. Waiting {_POLL_INTERVAL_SECONDS:.1f} seconds before retrying.")
+        await asyncio.sleep(_POLL_INTERVAL_SECONDS)
+
+    rate_limiter.record_request()
+
+
+def wait_if_rate_limited_sync() -> None:
+    """
+    Synchronous counterpart to wait_if_rate_limited(), for use in
+    ABSKiprisAPI.sync_call.
+    """
+    rate_limiter = get_rate_limiter()
+
+    while not rate_limiter.can_make_request():
+        logger.warning(f"Rate limit reached. Waiting {_POLL_INTERVAL_SECONDS:.1f} seconds before retrying.")
+        time.sleep(_POLL_INTERVAL_SECONDS)
+
+    rate_limiter.record_request()
