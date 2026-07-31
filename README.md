@@ -385,7 +385,7 @@ All 17 tools were exercised against the live KIPRIS API and verified to return w
 
 - **`trademark_search`** — every query against this project's KIPRIS API key returns result code 31 (`DEADLINE_EXPIRED`), regardless of the search term. This looks like the key isn't authorized for `trademarkInfoSearchService` specifically (KIPRIS approves some services separately from general patent search), not a bug in this server — but it also means we haven't been able to confirm the tool's actual output against a working key.
 
-If you have a KIPRIS API key with trademark search access and can share a raw XML response (success or error) via a [GitHub issue](https://github.com/nuri428/mcp_kipris/issues), we'll use it to verify/fix this tool.
+Tracking issue: [#9 — trademark_search verification needed](https://github.com/nuri428/mcp_kipris/issues/9). If you have a KIPRIS API key with trademark search access and can share a raw XML response (success or error), please comment there — we'll use it to verify/fix this tool.
 
 ---
 

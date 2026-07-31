@@ -334,7 +334,7 @@ curl -N http://localhost:6274/messages/
 
 - **`trademark_search`** — 이 프로젝트가 보유한 KIPRIS API 키로는 어떤 검색어를 넣어도 결과 코드 31(`DEADLINE_EXPIRED`)이 반환됩니다. 상표 검색 서비스(`trademarkInfoSearchService`)는 일반 특허 검색과 별도로 KIPRIS 포털에서 권한을 승인받아야 하는 것으로 보이며, 이 키가 그 권한을 갖고 있지 않은 것으로 판단됩니다 — 서버 코드의 버그는 아닌 것 같지만, 그만큼 정상 동작하는 키로 이 툴의 실제 출력 형태를 아직 확인하지 못했습니다.
 
-상표 검색 권한이 있는 KIPRIS API 키를 갖고 계시고, 원본 XML 응답(성공/에러 무관)을 [GitHub 이슈](https://github.com/nuri428/mcp_kipris/issues)로 공유해 주시면 참고해서 검증/수정하겠습니다.
+추적 이슈: [#9 — trademark_search 정상 동작 확인 요청](https://github.com/nuri428/mcp_kipris/issues/9). 상표 검색 권한이 있는 KIPRIS API 키를 갖고 계시고, 원본 XML 응답(성공/에러 무관)을 공유해 주실 수 있다면 해당 이슈에 댓글로 남겨주세요 — 참고해서 검증/수정하겠습니다.
 
 ---
 
