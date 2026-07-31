@@ -16,7 +16,7 @@ from mcp_kipris.kipris.api.korean.patent_summary_search_api import PatentSummary
 from mcp_kipris.kipris.api.korean.righter_search_api import PatentRighterSearchAPI
 from mcp_kipris.kipris.api.korean.application_number_search_api import PatentApplicationNumberSearchAPI
 from mcp_kipris.kipris.api.korean.ipc_search_api import IpcSearchAPI
-from mcp_kipris.kipris.api.korean.patent_agent_search_api import PatentAgentSearchAPI
+from mcp_kipris.kipris.api.korean.agent_search_api import AgentSearchAPI
 from mcp_kipris.kipris.api.korean.trademark_search_api import TrademarkSearchAPI
 from mcp_kipris.kipris.api.foreign.free_search_api import ForeignPatentFreeSearchAPI
 from mcp_kipris.kipris.api.foreign.application_number_search import ForeignPatentApplicationNumberSearchAPI
@@ -102,11 +102,11 @@ class ApiClientFactory:
             self._clients[key] = IpcSearchAPI(api_key=self.config.api_key)
         return self._clients[key]
 
-    def get_korean_patent_agent_search_client(self) -> PatentAgentSearchAPI:
+    def get_korean_patent_agent_search_client(self) -> AgentSearchAPI:
         """Get Korean patent agent search API client."""
         key = "korean_patent_agent_search"
         if key not in self._clients:
-            self._clients[key] = PatentAgentSearchAPI(api_key=self.config.api_key)
+            self._clients[key] = AgentSearchAPI(api_key=self.config.api_key)
         return self._clients[key]
 
     def get_korean_trademark_search_client(self) -> TrademarkSearchAPI:
@@ -179,10 +179,14 @@ class ApiClientFactory:
         }
 
     def get_all_clients(self) -> t.Dict[str, ABSKiprisAPI]:
-        """Get all API clients."""
+        """Get all API clients, namespaced by country.
+
+        Korean and foreign clients share some key names (e.g. "applicant_search"),
+        so a flat merge would silently drop entries. Prefixing avoids that.
+        """
         all_clients = {}
-        all_clients.update(self.get_all_korean_clients())
-        all_clients.update(self.get_all_foreign_clients())
+        all_clients.update({f"korean_{key}": client for key, client in self.get_all_korean_clients().items()})
+        all_clients.update({f"foreign_{key}": client for key, client in self.get_all_foreign_clients().items()})
         return all_clients
 
 

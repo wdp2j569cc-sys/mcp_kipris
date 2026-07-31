@@ -4,11 +4,13 @@ Implements token bucket algorithm to prevent API throttling.
 """
 
 import asyncio
-import time
+import logging
 import threading
-from typing import Dict, Optional
+from typing import Optional
 from collections import deque
 from datetime import datetime, timedelta
+
+logger = logging.getLogger("mcp-kipris")
 
 
 class TokenBucket:
