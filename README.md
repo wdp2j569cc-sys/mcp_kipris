@@ -70,7 +70,7 @@ This only governs how fast *this server* calls KIPRIS; it's separate from your A
 | Tool | Description |
 |------|-------------|
 | `patent_applicant_search` | Search patents by applicant name |
-| `patent_keyword_search` | Free-text keyword search |
+| `patent_free_search` | Free-text keyword search |
 | `patent_application_number_search` | Search by application number |
 | `patent_righter_search` | Search by rights holder name |
 | `patent_detail_search` | Retrieve full patent details by application number |
@@ -78,6 +78,8 @@ This only governs how fast *this server* calls KIPRIS; it's separate from your A
 | `abstract_search` | Search by abstract / invention summary — *contributed by [@haseo-ai](https://github.com/haseo-ai)* |
 | `ipc_search` | Search by IPC classification code — *contributed by [@haseo-ai](https://github.com/haseo-ai)* |
 | `agent_search` | Search by patent agent name — *contributed by [@haseo-ai](https://github.com/haseo-ai)* |
+| `patent_advanced_search` | Search by application number via KIPRIS's advanced-search service (a different KIPRIS endpoint than `patent_application_number_search`) |
+| `patent_search` | ⚠️ **Deprecated** — renamed to `patent_advanced_search`. Kept for backward compatibility; scheduled for removal in a future major version. |
 
 ### Trademark Search
 | Tool | Description |
@@ -93,8 +95,8 @@ Search patents from 13 countries via KIPRIS's international database:
 | `foreign_patent_applicant_search` | Search foreign patents by applicant |
 | `foreign_patent_application_number_search` | Search foreign patents by application number |
 | `foreign_patent_free_search` | Free-text search for foreign patents |
-| `foreign_patent_international_application_number_search` | Search by PCT international application number |
-| `foreign_patent_international_open_number_search` | Search by international publication number |
+| `foreign_international_application_number_search` | Search by PCT international application number |
+| `foreign_international_open_number_search` | Search by international publication number |
 
 ---
 

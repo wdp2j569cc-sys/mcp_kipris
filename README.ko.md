@@ -18,7 +18,7 @@ KIPRIS(한국특허정보원) API를 활용한 특허 검색 도구입니다. AI
 | 도구명 | 설명 |
 |--------|------|
 | `patent_applicant_search` | 출원인 이름으로 특허 검색 |
-| `patent_keyword_search` | 자유 텍스트(키워드)로 특허 검색 |
+| `patent_free_search` | 자유 텍스트(키워드)로 특허 검색 |
 | `patent_application_number_search` | 출원번호로 특허 검색 |
 | `patent_righter_search` | 권리자 이름으로 특허 검색 |
 | `patent_detail_search` | 출원번호로 특허 상세 정보 조회 |
@@ -26,6 +26,8 @@ KIPRIS(한국특허정보원) API를 활용한 특허 검색 도구입니다. AI
 | `abstract_search` | 초록(발명의 개요)으로 특허 검색 — *[@haseo-ai](https://github.com/haseo-ai) 기여* |
 | `ipc_search` | IPC 코드로 특허 검색 — *[@haseo-ai](https://github.com/haseo-ai) 기여* |
 | `agent_search` | 대리인명으로 특허 검색 — *[@haseo-ai](https://github.com/haseo-ai) 기여* |
+| `patent_advanced_search` | KIPRIS 고급검색(advanced search) 서비스를 통해 출원번호로 특허 검색 — `patent_application_number_search`와는 다른 KIPRIS 엔드포인트입니다 |
+| `patent_search` | ⚠️ **Deprecated** — `patent_advanced_search`로 이름이 변경되었습니다. 하위 호환을 위해 유지되며, 다음 메이저 버전에서 제거될 예정입니다. |
 
 ### 상표 검색
 | 도구명 | 설명 |
@@ -38,8 +40,8 @@ KIPRIS(한국특허정보원) API를 활용한 특허 검색 도구입니다. AI
 | `foreign_patent_applicant_search` | 출원인 이름으로 해외 특허 검색 |
 | `foreign_patent_application_number_search` | 출원번호로 해외 특허 검색 |
 | `foreign_patent_free_search` | 자유 텍스트로 해외 특허 검색 |
-| `foreign_patent_international_application_number_search` | 국제출원번호로 해외 특허 검색 |
-| `foreign_patent_international_open_number_search` | 국제공개번호로 해외 특허 검색 |
+| `foreign_international_application_number_search` | 국제출원번호로 해외 특허 검색 |
+| `foreign_international_open_number_search` | 국제공개번호로 해외 특허 검색 |
 
 ---
 

@@ -35,24 +35,25 @@
 - **`api/foreign/`**: 해외 특허 검색 API (15개국 지원)
 
 #### MCP 툴
-- **`tools/korean/`**: 한국 특허·상표 검색 툴 (11개)
+- **`tools/korean/`**: 한국 특허·상표 검색 툴 (12개)
 - **`tools/foreign/`**: 해외 특허 검색 툴 (5개)
 
 ### 2. 주요 기능
 
-#### 한국 특허 검색 (10개 툴)
+#### 한국 특허 검색 (11개 툴)
 1. **출원인 검색** (`patent_applicant_search`)
 2. **키워드(자유 텍스트) 검색** (`patent_free_search`)
-3. **출원번호 검색** (`patent_search`)
-4. **출원번호 검색** (`patent_application_number_search`)
-5. **권리자 검색** (`patent_righter_search`)
-6. **요약 정보 검색** (`patent_summary_search`)
-7. **상세 정보 검색** (`patent_detail_search`)
-8. **초록 검색** (`abstract_search`) — *[@haseo-ai](https://github.com/haseo-ai) 기여*
-9. **IPC 분류 코드 검색** (`ipc_search`) — *[@haseo-ai](https://github.com/haseo-ai) 기여*
-10. **대리인 검색** (`agent_search`) — *[@haseo-ai](https://github.com/haseo-ai) 기여*
+3. **출원번호 검색 — KIPRIS 고급검색 기반** (`patent_advanced_search`)
+4. **출원번호 검색** (`patent_search`) — ⚠️ **Deprecated**, 아래 참고
+5. **출원번호 검색 — 전용 조회 서비스 기반** (`patent_application_number_search`)
+6. **권리자 검색** (`patent_righter_search`)
+7. **요약 정보 검색** (`patent_summary_search`)
+8. **상세 정보 검색** (`patent_detail_search`)
+9. **초록 검색** (`abstract_search`) — *[@haseo-ai](https://github.com/haseo-ai) 기여*
+10. **IPC 분류 코드 검색** (`ipc_search`) — *[@haseo-ai](https://github.com/haseo-ai) 기여*
+11. **대리인 검색** (`agent_search`) — *[@haseo-ai](https://github.com/haseo-ai) 기여*
 
-> `patent_search`와 `patent_application_number_search`는 둘 다 출원번호로 검색하는 툴로, 기능이 겹칩니다. 정리 대상 후보.
+> **`patent_search` → `patent_advanced_search`로 개명**: `patent_search`와 `patent_application_number_search`는 둘 다 출원번호로 검색하지만 서로 **다른 KIPRIS 엔드포인트**(`getAdvancedSearch` vs `applicationNumberSearchInfo`, API 키 파라미터명도 `ServiceKey` vs `accessKey`로 다름)를 호출하는 별개 서비스라, 단순 중복이 아니라 이름이 부정확했던 것으로 판단해 **`patent_advanced_search`로 개명**했습니다. 옛 이름 `patent_search`는 `patent_advanced_search`의 하위 클래스로 남겨 하위 호환을 유지하며(`server.py`/`sse_server.py` 양쪽 등록 유지), 인스턴스화 시 `DeprecationWarning`을 발생시키고 MCP 툴 설명(`description`)과 `metadata.deprecated`에도 폐기 예정임을 명시했습니다. **다음 메이저 버전에서 `patent_search` 제거 예정** — 신규 통합은 `patent_advanced_search`를 사용하세요. 두 툴 모두 출력 컬럼을 `ApplicationNumber/ApplicationDate/InventionName/Applicant`로 통일해 결과 형식이 일치하도록 정렬했습니다(`patent_application_number_search`의 동기/비동기 응답이 서로 다른 컬럼을 반환하던 버그도 함께 수정).
 
 #### 한국 상표 검색 (1개 툴)
 1. **상표 검색** (`trademark_search`) — *[@haseo-ai](https://github.com/haseo-ai) 기여*
@@ -61,8 +62,8 @@
 1. **출원인 검색** (`foreign_patent_applicant_search`)
 2. **출원번호 검색** (`foreign_patent_application_number_search`)
 3. **자유 텍스트 검색** (`foreign_patent_free_search`)
-4. **국제출원번호 검색** (`foreign_patent_international_application_number_search`)
-5. **국제공개번호 검색** (`foreign_patent_international_open_number_search`)
+4. **국제출원번호 검색** (`foreign_international_application_number_search`)
+5. **국제공개번호 검색** (`foreign_international_open_number_search`)
 
 ---
 
@@ -185,7 +186,7 @@ pyright>=1.1.398
 ├── 소스 코드 (90+ 파일)
 │   ├── 서버 파일 (2개)
 │   ├── API 클라이언트 (20+ 파일)
-│   ├── 툴 구현 (16개)
+│   ├── 툴 구현 (17개)
 │   └── 유틸리티 (4개)
 └── Docker 파일 (2개)
     ├── Dockerfile.stdio
@@ -194,7 +195,7 @@ pyright>=1.1.398
 
 ### 코드 품질 지표
 - **총 라인 수**: 약 3,000+ 라인
-- **테스트覆盖率**: pytest 기반 테스트 프레임워크 구성
+- **테스트 커버리지**: `test/unit/` 49개 pytest 단위 테스트, 커버리지 약 60%
 - **타입 안정성**: Pyright 정적 타입 체크 적용
 - **코드 포맷**: Ruff 자동 포맷팅
 
@@ -234,8 +235,8 @@ LOG_LEVEL=INFO  # 프로덕션 환경
 ## 🔍 현재 상태 분석
 
 ### ✅ 완료된 기능
-1. **MCP 서버 구현**: stdio 및 HTTP(SSE) 모드, 두 모드 모두 동일한 16개 툴 등록(양쪽 불일치 버그 수정됨)
-2. **한국 특허·상표 검색**: 11개 완전한 툴 구현 (특허 10개 + 상표 1개)
+1. **MCP 서버 구현**: stdio 및 HTTP(SSE) 모드, 두 모드 모두 동일한 17개 툴 등록(양쪽 불일치 버그 수정됨)
+2. **한국 특허·상표 검색**: 12개 완전한 툴 구현 (특허 11개 + 상표 1개)
 3. **해외 특허 검색**: 5개 완전한 툴 구현
 4. **보안 강화**: API 키 마스킹(요청 로그 경로까지 실제 적용), Rate limiting(실제 요청 경로에 연결됨)
 5. **안정성 개선**: 재시도/백오프 메커니즘
@@ -282,6 +283,6 @@ LOG_LEVEL=INFO  # 프로덕션 환경
 
 ## 🎯 결론
 
-MCP KIPRIS 프로젝트는 **프로덕션 레벨의 안정성과 보안성**을 갖춘 특허 검색 MCP 서버입니다. **16개의 완전한 툴**(한국 특허·상표 11개 + 해외 특허 5개)과 **15개국 해외 특허 지원**을 통해 강력한 특허 검색 기능을 제공하며, **최신 보안 기능과 안정성 메커니즘**으로 실제 운영 환경에서도 신뢰성 있는 서비스를 보장합니다.
+MCP KIPRIS 프로젝트는 **프로덕션 레벨의 안정성과 보안성**을 갖춘 특허 검색 MCP 서버입니다. **17개의 완전한 툴**(한국 특허·상표 12개 + 해외 특허 5개, 이 중 `patent_search` 1개는 하위 호환용 deprecated 별칭)과 **15개국 해외 특허 지원**을 통해 강력한 특허 검색 기능을 제공하며, **최신 보안 기능과 안정성 메커니즘**으로 실제 운영 환경에서도 신뢰성 있는 서비스를 보장합니다.
 
 현재 프로젝트는 안정적인 상태를 유지하고 있으며, 지속적인 개선을 통해 더욱 강력한 특허 검색 솔루션으로 발전할 잠재력을 가지고 있습니다.
