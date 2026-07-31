@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "skeptic-code": {
+      "source": "smithery.ai",
+      "sourceType": "well-known",
+      "computedHash": "6c168f0b275d8afed8efd59d5c9eb33f17dbadaeae7669200566be871f4fdbeb"
+    }
+  }
+}
