@@ -50,6 +50,14 @@ KIPRIS(한국특허정보원) API를 활용한 특허 검색 도구입니다. AI
 
 ---
 
+## 요청 제한 (Rate Limiting)
+
+KIPRIS로 나가는 요청은 서버 내부의 rate limiter가 **분당 60건**으로 제한합니다 (`src/mcp_kipris/kipris/rate_limiter.py`의 `RateLimiter` 기본값). 제한에 도달하면 요청이 실패하는 대신 자동으로 대기했다가 재시도합니다 — 별도 조치가 필요 없습니다. 이 값은 현재 환경 변수로 설정할 수 없습니다.
+
+이는 어디까지나 *이 서버가* KIPRIS를 호출하는 속도를 제한하는 것이며, KIPRIS 개발자 포털에서 발급받은 API 키 자체의 일일 호출 한도와는 별개입니다.
+
+---
+
 ## 설치
 
 ### 방법 1: Smithery 마켓플레이스 (가장 간편 — 로컬 설치 불필요)
@@ -150,16 +158,25 @@ Claude Desktop의 `claude_desktop_config.json`에 다음을 추가하세요:
 
 ### 로컬 테스트 실행
 
-테스트는 실제 API를 호출하므로 유효한 `KIPRIS_API_KEY`가 필요합니다.
+`test/`에는 두 종류의 테스트가 있습니다:
+
+- **`test/unit/`** — 네트워크 호출이 전혀 없는 mock 기반 테스트. `KIPRIS_API_KEY` 불필요. `pytest.mark.unit`로 마킹됨.
+- **루트의 `test_*.py`** — 실제 KIPRIS API를 호출하며 유효한 `KIPRIS_API_KEY`가 필요합니다. pytest로 수집되는 유일한 케이스는 `pytest.mark.integration`으로 마킹되어 있고, 나머지는 `if __name__ == "__main__":`으로 보호된 독립 실행 데모 스크립트입니다.
 
 ```bash
 # 개발 의존성 설치 (uv 사용)
 uv sync --group dev
 
-# 커버리지와 함께 전체 테스트 실행
+# 단위 테스트만 실행 — 빠르고 API 키 불필요
+pytest test/unit -v
+
+# 라이브 API를 호출하는 integration 테스트를 제외하고 실행
+pytest test/ -m "not integration" -v
+
+# 커버리지와 함께 전체 테스트 실행 (CI와 동일, KIPRIS_API_KEY 필요)
 pytest test/ -v --cov=src/mcp_kipris --cov-report=term-missing
 
-# 개별 테스트 파일 실행
+# 개별 데모 스크립트 실행
 python test/test_samsung_patents.py
 python test/test_patent_keyword_search.py
 ```

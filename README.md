@@ -56,6 +56,14 @@ Then add the server to Claude Desktop — see [Claude Desktop Configuration](#cl
 
 ---
 
+## Rate Limiting
+
+Outgoing requests to KIPRIS are throttled by an in-process rate limiter capped at **60 requests per minute** (the default in `RateLimiter`, `src/mcp_kipris/kipris/rate_limiter.py`). When the cap is hit, a request waits and retries automatically instead of failing — no action needed on your end. This limit is not currently configurable via an environment variable.
+
+This only governs how fast *this server* calls KIPRIS; it's separate from your API key's own daily request quota on the KIPRIS developer portal.
+
+---
+
 ## Features
 
 ### Korean Patent Search
@@ -194,15 +202,26 @@ Add this block to your Claude Desktop `claude_desktop_config.json`
 
 ### Run the Test Suite
 
-Tests make **live API calls** and require a valid `KIPRIS_API_KEY`.
+`test/` has two kinds of tests:
+
+- **`test/unit/`** — fully mocked, no network access, no `KIPRIS_API_KEY` required. Marked `pytest.mark.unit`.
+- **Root-level `test_*.py`** — call the live KIPRIS API and require a valid `KIPRIS_API_KEY`. The one pytest-discoverable case is marked `pytest.mark.integration`; the rest are standalone demo scripts guarded by `if __name__ == "__main__":`.
 
 ```bash
-# Install and run
-uv sync
+# Install
+uv sync --group dev
+
+# Unit tests only — fast, no API key needed
+pytest test/unit -v
+
+# Everything except the live-API integration test
+pytest test/ -m "not integration" -v
+
+# Full suite with coverage (what CI runs — needs KIPRIS_API_KEY)
 pytest test/ -v --cov=src/mcp_kipris --cov-report=term-missing
 ```
 
-Individual test scripts can also be run directly:
+Individual demo scripts can also be run directly:
 
 ```bash
 python test/test_samsung_patents.py
