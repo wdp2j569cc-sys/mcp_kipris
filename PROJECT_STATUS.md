@@ -237,6 +237,7 @@ LOG_LEVEL=INFO  # 프로덕션 환경
 2. **테스트 강화**: 단위 테스트 및 통합 테스트 추가
 3. **문서화**: API 문서 및 개발자 가이드 보강
 4. **모니터링**: 성능 모니터링 및 로그 분석 기능
+5. **MCP 스펙 2026-07-28 대응** (작업 후보, 대기 중): [MCP 스펙 2026-07-28](https://modelcontextprotocol.io/specification/2026-07-28/changelog)이 세션 제거, `server/discover` 도입, Streamable HTTP 전환(HTTP+SSE Deprecated), Roots/Sampling/Logging Deprecated 등 프로토콜을 대규모로 재설계함. 현재 `mcp` SDK는 `1.9.4`(요구사항 `>=1.6.0`)로 이 스펙을 지원하지 않음. **착수 조건**: `mcp` Python SDK가 신규 스펙 지원 버전을 릴리스하면 업그레이드 후, `sse_server.py`의 레거시 `SseServerTransport`(HTTP+SSE)를 Streamable HTTP로 마이그레이션.
 
 ### 🔄 진행 중인 작업
 - LSP 오류 해결 (의존성 문제)

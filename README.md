@@ -358,6 +358,12 @@ If you use [ClaudeWork](https://claudework.io), this server is also packaged as 
 
 ---
 
+## Roadmap
+
+- **MCP spec 2026-07-28 upgrade** — the [MCP specification](https://modelcontextprotocol.io/specification/2026-07-28/changelog) released 2026-07-28 is a major protocol redesign (stateless sessions, `server/discover`, Streamable HTTP as the only non-deprecated HTTP transport, deprecation of Roots/Sampling/Logging). This server currently pins `mcp[cli]>=1.6.0` (resolved to `1.9.4`), which predates that revision. We'll upgrade once the `mcp` Python SDK ships support for it, and migrate `sse_server.py` off the legacy HTTP+SSE transport (`SseServerTransport`) to Streamable HTTP at the same time.
+
+---
+
 ## Contributing
 
 See [DEVELOPMENT.md](DEVELOPMENT.md) for the full developer guide and CI/CD setup.

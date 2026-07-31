@@ -308,6 +308,12 @@ curl -N http://localhost:6274/messages/
 
 ---
 
+## 로드맵
+
+- **MCP 스펙 2026-07-28 업그레이드** — 2026-07-28에 공개된 [MCP 스펙](https://modelcontextprotocol.io/specification/2026-07-28/changelog)은 프로토콜을 대규모로 재설계했습니다 (세션 제거, `server/discover` 도입, Streamable HTTP를 유일한 비-Deprecated HTTP 전송 방식으로 지정, Roots/Sampling/Logging 기능 Deprecated 처리 등). 현재 이 서버는 `mcp[cli]>=1.6.0`(실제 lock 버전 `1.9.4`)을 사용 중이며, 이는 이번 개정 이전 버전입니다. `mcp` Python SDK가 신규 스펙을 지원하는 버전을 릴리스하면 업그레이드하고, 동시에 `sse_server.py`의 레거시 HTTP+SSE 전송(`SseServerTransport`)을 Streamable HTTP로 마이그레이션할 예정입니다.
+
+---
+
 ## 기여하기
 
 개발자 가이드와 CI/CD 설정은 [DEVELOPMENT.md](DEVELOPMENT.md)를 참고하세요.
