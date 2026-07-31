@@ -327,6 +327,16 @@ curl -N http://localhost:6274/messages/
 
 ---
 
+## 알려진 제한사항
+
+17개 툴 전체를 실제 KIPRIS API로 검증했으며, 아래 1개를 제외하고는 정상 동작(정상적인 형태의 결과)을 확인했습니다.
+
+- **`trademark_search`** — 이 프로젝트가 보유한 KIPRIS API 키로는 어떤 검색어를 넣어도 결과 코드 31(`DEADLINE_EXPIRED`)이 반환됩니다. 상표 검색 서비스(`trademarkInfoSearchService`)는 일반 특허 검색과 별도로 KIPRIS 포털에서 권한을 승인받아야 하는 것으로 보이며, 이 키가 그 권한을 갖고 있지 않은 것으로 판단됩니다 — 서버 코드의 버그는 아닌 것 같지만, 그만큼 정상 동작하는 키로 이 툴의 실제 출력 형태를 아직 확인하지 못했습니다.
+
+상표 검색 권한이 있는 KIPRIS API 키를 갖고 계시고, 원본 XML 응답(성공/에러 무관)을 [GitHub 이슈](https://github.com/nuri428/mcp_kipris/issues)로 공유해 주시면 참고해서 검증/수정하겠습니다.
+
+---
+
 ## 로드맵
 
 - **MCP 스펙 2026-07-28 업그레이드** — 2026-07-28에 공개된 [MCP 스펙](https://modelcontextprotocol.io/specification/2026-07-28/changelog)은 프로토콜을 대규모로 재설계했습니다 (세션 제거, `server/discover` 도입, Streamable HTTP를 유일한 비-Deprecated HTTP 전송 방식으로 지정, Roots/Sampling/Logging 기능 Deprecated 처리 등). 현재 이 서버는 `mcp[cli]>=1.6.0`(실제 lock 버전 `1.9.4`)을 사용 중이며, 이는 이번 개정 이전 버전입니다. `mcp` Python SDK가 신규 스펙을 지원하는 버전을 릴리스하면 업그레이드하고, 동시에 `sse_server.py`의 레거시 HTTP+SSE 전송(`SseServerTransport`)을 Streamable HTTP로 마이그레이션할 예정입니다.

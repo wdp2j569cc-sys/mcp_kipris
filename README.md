@@ -379,6 +379,16 @@ If you use [ClaudeWork](https://claudework.io), this server is also packaged as 
 
 ---
 
+## Known Limitations
+
+All 17 tools were exercised against the live KIPRIS API and verified to return well-formed output, except:
+
+- **`trademark_search`** — every query against this project's KIPRIS API key returns result code 31 (`DEADLINE_EXPIRED`), regardless of the search term. This looks like the key isn't authorized for `trademarkInfoSearchService` specifically (KIPRIS approves some services separately from general patent search), not a bug in this server — but it also means we haven't been able to confirm the tool's actual output against a working key.
+
+If you have a KIPRIS API key with trademark search access and can share a raw XML response (success or error) via a [GitHub issue](https://github.com/nuri428/mcp_kipris/issues), we'll use it to verify/fix this tool.
+
+---
+
 ## Roadmap
 
 - **MCP spec 2026-07-28 upgrade** — the [MCP specification](https://modelcontextprotocol.io/specification/2026-07-28/changelog) released 2026-07-28 is a major protocol redesign (stateless sessions, `server/discover`, Streamable HTTP as the only non-deprecated HTTP transport, deprecation of Roots/Sampling/Logging). This server currently pins `mcp[cli]>=1.6.0` (resolved to `1.9.4`), which predates that revision. We'll upgrade once the `mcp` Python SDK ships support for it, and migrate `sse_server.py` off the legacy HTTP+SSE transport (`SseServerTransport`) to Streamable HTTP at the same time.
