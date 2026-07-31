@@ -41,7 +41,7 @@ def _format_response(response: pd.DataFrame) -> Sequence[TextContent]:
         return [TextContent(type="text", text="검색 결과가 없습니다.")]
 
     summary_df = response.rename(columns=_OUTPUT_COLUMN_MAP)[_OUTPUT_COLUMNS].copy()
-    return [TextContent(type="text", text=summary_df.to_markdown(index=False))]
+    return [TextContent(type="text", text=ToolHandler.format_table(summary_df))]
 
 
 class PatentAdvancedSearchTool(ToolHandler):

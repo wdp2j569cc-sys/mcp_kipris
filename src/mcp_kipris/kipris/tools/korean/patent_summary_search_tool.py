@@ -61,7 +61,7 @@ class PatentSummarySearchTool(ToolHandler):
             if response.empty:
                 return [TextContent(type="text", text="there is no result")]
 
-            return [TextContent(type="text", text=response.to_markdown(index=False))]
+            return [TextContent(type="text", text=self.format_table(response))]
 
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")
@@ -83,7 +83,7 @@ class PatentSummarySearchTool(ToolHandler):
             if response.empty:
                 return [TextContent(type="text", text="there is no result")]
 
-            return [TextContent(type="text", text=response.to_markdown(index=False))]
+            return [TextContent(type="text", text=self.format_table(response))]
 
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")

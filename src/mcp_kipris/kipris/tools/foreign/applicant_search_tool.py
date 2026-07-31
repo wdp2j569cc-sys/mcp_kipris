@@ -95,7 +95,7 @@ class ForeignPatentApplicantSearchTool(ToolHandler):
             if response.empty:
                 return [TextContent(type="text", text="검색 결과가 없습니다.")]
 
-            return [TextContent(type="text", text=response.to_markdown(index=False))]
+            return [TextContent(type="text", text=self.format_table(response))]
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")
             error_details = e.errors()
@@ -129,7 +129,7 @@ class ForeignPatentApplicantSearchTool(ToolHandler):
             if response.empty:
                 return [TextContent(type="text", text="검색 결과가 없습니다.")]
 
-            return [TextContent(type="text", text=response.to_markdown(index=False))]
+            return [TextContent(type="text", text=self.format_table(response))]
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")
             error_details = e.errors()

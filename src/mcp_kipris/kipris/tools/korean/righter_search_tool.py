@@ -85,7 +85,7 @@ class PatentRighterSearchTool(ToolHandler):
             return [TextContent(type="text", text="검색 결과가 없습니다.")]
 
         summary_df = response[["ApplicationNumber", "ApplicationDate", "InventionName", "RegistrationStatus"]].copy()
-        return [TextContent(type="text", text=summary_df.to_markdown(index=False))]
+        return [TextContent(type="text", text=self.format_table(summary_df))]
 
     async def run_tool_async(self, args: dict) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
         """권리자 검색 비동기 실행 메서드"""
@@ -106,4 +106,4 @@ class PatentRighterSearchTool(ToolHandler):
             return [TextContent(type="text", text="검색 결과가 없습니다.")]
 
         summary_df = response[["ApplicationNumber", "ApplicationDate", "InventionName", "RegistrationStatus"]].copy()
-        return [TextContent(type="text", text=summary_df.to_markdown(index=False))]
+        return [TextContent(type="text", text=self.format_table(summary_df))]

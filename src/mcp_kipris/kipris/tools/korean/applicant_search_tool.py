@@ -111,7 +111,7 @@ class PatentApplicantSearchTool(ToolHandler):
 
             summary_df = response[["ApplicationNumber", "ApplicationDate", "InventionName", "Applicant"]].copy()
             del response
-            return [TextContent(type="text", text=summary_df.to_markdown(index=False))]
+            return [TextContent(type="text", text=self.format_table(summary_df))]
 
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")
@@ -141,7 +141,7 @@ class PatentApplicantSearchTool(ToolHandler):
             # logger.info(f"response: {response.columns}")
             summary_df = response[["ApplicationNumber", "ApplicationDate", "InventionName", "Applicant"]].copy()
             del response
-            return [TextContent(type="text", text=summary_df.to_markdown(index=False))]
+            return [TextContent(type="text", text=self.format_table(summary_df))]
 
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")

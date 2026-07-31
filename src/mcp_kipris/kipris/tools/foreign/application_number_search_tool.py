@@ -95,7 +95,7 @@ class ForeignPatentApplicationNumberSearchTool(ToolHandler):
                 return [TextContent(type="text", text="there is no result")]
 
             summary_df = response[["applicationNo", "applicationDate", "inventionName", "applicant"]].copy()
-            return [TextContent(type="text", text=summary_df.to_markdown(index=False))]
+            return [TextContent(type="text", text=self.format_table(summary_df))]
 
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")
@@ -121,7 +121,7 @@ class ForeignPatentApplicationNumberSearchTool(ToolHandler):
                 return [TextContent(type="text", text="there is no result")]
 
             summary_df = response[["applicationNo", "applicationDate", "inventionName", "applicant"]].copy()
-            return [TextContent(type="text", text=summary_df.to_markdown(index=False))]
+            return [TextContent(type="text", text=self.format_table(summary_df))]
 
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")
