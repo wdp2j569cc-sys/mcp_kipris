@@ -257,6 +257,8 @@ LOG_LEVEL=INFO  # 프로덕션 환경
 - `ApiClientFactory.get_all_clients()`가 한국/해외 클라이언트 딕셔너리를 단순 병합해 키 이름이 겹치는 3개(`applicant_search`, `free_search`, `application_number_search`) 한국 클라이언트가 해외 클라이언트에 덮어써짐 → `korean_`/`foreign_` 접두사로 네임스페이스 분리
 - (실제 KIPRIS API로 라이브 검증 중 발견) `patent_detail_search`에서 `claim`/`astrtCont`처럼 여러 항목을 `"\n\n"`으로 합친 필드가 마크다운 표 셀 안에 개행 문자를 그대로 포함해, 청구항 7개짜리 실제 특허로 테스트하니 표가 13줄짜리 깨진 표로 렌더링됨 → 구분자를 공백으로 바꾸고 원본 텍스트의 개행도 정리
 - (동일 라이브 검증) 존재하지 않는 출원번호로 조회하면 KIPRIS가 에러 없이 `resultCode=00`과 함께 모든 필드가 `null`인 `item`을 반환해, 기존 `response.empty` 체크로는 못 잡고 빈 값으로 채워진 표가 나감 → `biblioSummaryInfoArray`(모든 정상 특허에 존재) 부재 여부로 "결과 없음"을 판별하는 `_item_has_data()` 추가
+- (17개 툴 전체를 실제 API로 재검증하며 발견, 2026-08-01) KIPRIS는 공동출원인/공동발명자가 있으면 한 필드 안에 `"삼성전자주식회사|전남대학교산학협력단"`처럼 **파이프(`|`) 문자로 값을 구분**해서 줌. 마크다운 표에서 `|`는 컬럼 구분자라서, `patent_applicant_search`/`agent_search`/`foreign_patent_applicant_search`/`foreign_patent_free_search` 등 다수 툴에서 공동출원 특허가 하나라도 섞이면 표가 깨짐(16개 파일, 31개 `to_markdown()` 호출 지점 전부 동일하게 취약했음) → `ToolHandler.format_table()` 공통 헬퍼를 추가해 `|`→`/`, 개행→공백으로 정리한 뒤 렌더링하도록 전체 교체
+- (동일 라이브 검증, 미해결) `abs_class.py`의 `parse_response()`가 KIPRIS API 에러(`resultCode != "00"`, 예: 코드 31 `DEADLINE_EXPIRED`)를 감지하면 `logger.warning`만 남기고 빈 `DataFrame`을 반환함 → 모든 툴이 "실제 에러"와 "매칭 결과 0건"을 구분 못 하고 똑같이 "no result"를 보여줌. 실제로 `trademark_search`를 라이브 검증하는 중 발견 — 이 API 키가 `trademarkInfoSearchService`에 대해 코드 31을 반환해 "삼성"/"SAMSUNG" 등 어떤 검색어를 넣어도 "there is no result"만 나오는데, 이게 정말 매칭이 없는 건지 키/서비스 권한 문제인지 사용자는 알 길이 없음. 수정 방향은 논의 필요(예: 코드 20 `NO_RESULTS`만 빈 결과로 처리하고 나머지는 `kipris/errors.py`의 `KiprisApiError`를 raise — 각 툴의 기존 `except Exception` 블록이 이미 있어 별도 수정 없이 자연스럽게 사용자에게 실제 에러 메시지가 노출됨)
 
 ### 🔄 진행 중인 작업
 - ~~LSP 오류 해결 (의존성 문제)~~ ✅ 해결됨
