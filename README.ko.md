@@ -21,7 +21,7 @@ KIPRIS(한국특허정보원) API를 활용한 특허 검색 도구입니다. AI
 | `patent_free_search` | 자유 텍스트(키워드)로 특허 검색 |
 | `patent_application_number_search` | 출원번호로 특허 검색 |
 | `patent_righter_search` | 권리자 이름으로 특허 검색 |
-| `patent_detail_search` | 출원번호로 특허 상세 정보 조회 |
+| `patent_detail_search` | 출원번호로 특허 상세 정보 조회. `fields` 파라미터로 약 65개 필드(서지정보/IPC/초록/청구항/출원인·발명자·대리인/우선권/법적상태/R&D 등) 중 원하는 조합만 선택 가능 — 생략하면 짧은 기본 요약만 반환 |
 | `patent_summary_search` | 출원번호로 특허 요약 정보 조회 |
 | `abstract_search` | 초록(발명의 개요)으로 특허 검색 — *[@haseo-ai](https://github.com/haseo-ai) 기여* |
 | `ipc_search` | IPC 코드로 특허 검색 — *[@haseo-ai](https://github.com/haseo-ai) 기여* |

@@ -73,7 +73,7 @@ This only governs how fast *this server* calls KIPRIS; it's separate from your A
 | `patent_free_search` | Free-text keyword search |
 | `patent_application_number_search` | Search by application number |
 | `patent_righter_search` | Search by rights holder name |
-| `patent_detail_search` | Retrieve full patent details by application number |
+| `patent_detail_search` | Retrieve patent details by application number. Supports a `fields` parameter to pick any combination of ~65 available fields (bibliography, IPC, abstract, claims, applicant/inventor/agent, priority, legal status, R&D funding, ...); omit it for a short default summary |
 | `patent_summary_search` | Retrieve patent summary by application number |
 | `abstract_search` | Search by abstract / invention summary — *contributed by [@haseo-ai](https://github.com/haseo-ai)* |
 | `ipc_search` | Search by IPC classification code — *contributed by [@haseo-ai](https://github.com/haseo-ai)* |

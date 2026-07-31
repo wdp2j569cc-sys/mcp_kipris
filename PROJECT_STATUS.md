@@ -195,7 +195,7 @@ pyright>=1.1.398
 
 ### 코드 품질 지표
 - **총 라인 수**: 약 3,000+ 라인
-- **테스트 커버리지**: `test/unit/` 49개 pytest 단위 테스트, 커버리지 약 60%
+- **테스트 커버리지**: `test/unit/` 61개 pytest 단위 테스트, 커버리지 약 61%
 - **타입 안정성**: Pyright 정적 타입 체크 적용
 - **코드 포맷**: Ruff 자동 포맷팅
 
@@ -248,6 +248,7 @@ LOG_LEVEL=INFO  # 프로덕션 환경
 3. **문서화**: API 문서 및 개발자 가이드 보강
 4. **모니터링**: 성능 모니터링 및 로그 분석 기능
 5. **MCP 스펙 2026-07-28 대응** (작업 후보, 대기 중): [MCP 스펙 2026-07-28](https://modelcontextprotocol.io/specification/2026-07-28/changelog)이 세션 제거, `server/discover` 도입, Streamable HTTP 전환(HTTP+SSE Deprecated), Roots/Sampling/Logging Deprecated 등 프로토콜을 대규모로 재설계함. 현재 `mcp` SDK는 `1.9.4`(요구사항 `>=1.6.0`)로 이 스펙을 지원하지 않음. **착수 조건**: `mcp` Python SDK가 신규 스펙 지원 버전을 릴리스하면 업그레이드 후, `sse_server.py`의 레거시 `SseServerTransport`(HTTP+SSE)를 Streamable HTTP로 마이그레이션.
+6. ~~**응답 토큰 절감을 위한 `fields` 파라미터**~~ ✅ `patent_detail_search`에 우선 적용 — 이 툴은 원래 필터링 없이 원본 중첩 응답(`getBibliographyDetailInfoSearch`, 최상위 컬럼이 `biblioSummaryInfoArray` 등 15개의 opaque wrapper 배열이라 `to_markdown()` 결과가 사실상 못 쓰는 수준)을 그대로 반환했음. `fields`를 생략/빈 배열로 두면 6개 기본 요약 필드(`applicationNumber`, `applicationDate`, `inventionTitle`, `applicantName`, `registerStatus`, `ipcNumber`)만 반환하고, 지정하면 서지정보/IPC/초록/청구항/출원인·발명자·대리인/우선권/지정국가/선행기술/법적상태/R&D 등 약 65개 필드 중 자유 조합으로 선택 가능. 나머지 툴(특히 원본 텍스트가 긴 `abstract_search`, `patent_summary_search`)에는 이 패턴 검증 후 확장 예정.
 
 ### 🐛 테스트 작성 중 발견/수정한 버그
 - `sse_server.py`가 `server.py`에 있는 4개 툴(`KoreanAbstractSearchTool`, `KoreanIpcSearchTool`, `KoreanAgentSearchTool`, `KoreanTrademarkSearchTool`)을 등록하지 않아 HTTP/SSE 모드에서 사용 불가 → 등록 추가, 회귀 테스트(`test_tool_registration.py`)로 방지
