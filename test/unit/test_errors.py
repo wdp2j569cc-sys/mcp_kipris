@@ -1,6 +1,7 @@
 import pytest
 
 from mcp_kipris.kipris.errors import (
+    KiprisApiError,
     KiprisConnectionError,
     KiprisErrorCode,
     KiprisHttpError,
@@ -20,6 +21,16 @@ def test_timeout_error_to_dict():
         "message": "Request timeout after 30 seconds",
         "details": {"timeout_seconds": 30},
     }
+
+
+def test_str_returns_the_message_not_an_empty_string():
+    """KiprisApiError never called super().__init__(message), so
+    str(exception) — what every tool's `except Exception as e` handler
+    actually shows the user — returned "" instead of the error text.
+    """
+    error = KiprisApiError(code=KiprisErrorCode.API_ERROR, message="something went wrong")
+
+    assert str(error) == "something went wrong"
 
 
 def test_connection_error_wraps_original_exception():

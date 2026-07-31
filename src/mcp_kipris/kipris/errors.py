@@ -22,6 +22,7 @@ class KiprisApiError(Exception):
     """Base exception for KIPRIS API errors."""
 
     def __init__(self, code: KiprisErrorCode, message: str, details: t.Dict = None):
+        super().__init__(message)
         self.code = code
         self.message = message
         self.details = details or {}

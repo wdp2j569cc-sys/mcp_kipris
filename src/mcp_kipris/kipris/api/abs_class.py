@@ -8,8 +8,14 @@ from dotenv import load_dotenv
 from stringcase import camelcase
 
 from mcp_kipris.kipris.api.utils import get_nested_key_value, get_response, get_response_async
+from mcp_kipris.kipris.errors import KiprisApiError, KiprisErrorCode
 from mcp_kipris.kipris.logging_utils import redact_sensitive_data
 from mcp_kipris.kipris.rate_limiter import wait_if_rate_limited, wait_if_rate_limited_sync
+
+# KIPRIS result codes that mean "the request succeeded but matched
+# nothing" rather than an actual failure — parse_response treats only
+# these as an empty (not exceptional) result.
+_NO_RESULT_CODES = {"20"}
 
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
@@ -106,11 +112,22 @@ class ABSKiprisAPI:
         return None
 
     def parse_response(self, response: dict) -> pd.DataFrame:
-        # Check for API-level errors first
+        # Check for API-level errors first. Only a genuine "no matching
+        # results" response is treated as empty; anything else (bad
+        # parameters, an unauthorized/expired key for this service, ...)
+        # is raised so the caller sees the real reason instead of a
+        # search that looks like it just found nothing.
         api_error = self.check_api_error(response)
         if api_error:
-            logger.warning(f"KIPRIS API 에러로 인해 빈 결과 반환: {api_error}")
-            return pd.DataFrame()
+            result_code = str(get_nested_key_value(response, "response.header.resultCode")) if response else None
+            if result_code in _NO_RESULT_CODES:
+                logger.info(f"KIPRIS: 매칭 결과 없음 ({api_error})")
+                return pd.DataFrame()
+            raise KiprisApiError(
+                code=KiprisErrorCode.API_ERROR,
+                message=f"KIPRIS API 오류: {api_error}",
+                details={"result_code": result_code},
+            )
 
         res_dict = get_nested_key_value(response, self.KEY_STRING)
         if res_dict is None:
