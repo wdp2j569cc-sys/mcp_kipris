@@ -233,16 +233,22 @@ LOG_LEVEL=INFO  # 프로덕션 환경
 6. **성능 최적화**: 비동기 처리, 클라이언트 캐싱
 
 ### ⚠️ 개선 필요 사항
-1. **의존성 해결**: 일부 import 오류 (LSP)
-2. **테스트 강화**: 단위 테스트 및 통합 테스트 추가
+1. ~~**의존성 해결**: 일부 import 오류 (LSP)~~ ✅ 해결됨 — `server.py`/`sse_server.py` import 정상 확인, `api_client_factory.py`의 잘못된 모듈 경로(`patent_agent_search_api` → `agent_search_api`)도 테스트 작성 중 발견하여 수정
+2. ~~**테스트 강화**: 단위 테스트 및 통합 테스트 추가~~ ✅ 해결됨 — `test/unit/`에 네트워크 호출 없는 pytest 단위 테스트 35개 추가(도구 레지스트리 회귀 테스트, rate limiter, 에러 클래스, 로그 마스킹, API 클라이언트 팩토리). 기존 라이브 API 테스트는 `pytest.mark.integration`으로 구분. 커버리지 0%대 → 56%
 3. **문서화**: API 문서 및 개발자 가이드 보강
 4. **모니터링**: 성능 모니터링 및 로그 분석 기능
 5. **MCP 스펙 2026-07-28 대응** (작업 후보, 대기 중): [MCP 스펙 2026-07-28](https://modelcontextprotocol.io/specification/2026-07-28/changelog)이 세션 제거, `server/discover` 도입, Streamable HTTP 전환(HTTP+SSE Deprecated), Roots/Sampling/Logging Deprecated 등 프로토콜을 대규모로 재설계함. 현재 `mcp` SDK는 `1.9.4`(요구사항 `>=1.6.0`)로 이 스펙을 지원하지 않음. **착수 조건**: `mcp` Python SDK가 신규 스펙 지원 버전을 릴리스하면 업그레이드 후, `sse_server.py`의 레거시 `SseServerTransport`(HTTP+SSE)를 Streamable HTTP로 마이그레이션.
 
+### 🐛 테스트 작성 중 발견/수정한 버그
+- `sse_server.py`가 `server.py`에 있는 4개 툴(`KoreanAbstractSearchTool`, `KoreanIpcSearchTool`, `KoreanAgentSearchTool`, `KoreanTrademarkSearchTool`)을 등록하지 않아 HTTP/SSE 모드에서 사용 불가 → 등록 추가, 회귀 테스트(`test_tool_registration.py`)로 방지
+- `rate_limiter.py`의 `wait_if_rate_limited()`가 정의되지 않은 `logger`를 참조해 rate limit 발동 시 `NameError`로 죽음 → `logging` import 및 모듈 로거 추가
+- `api_client_factory.py`가 존재하지 않는 모듈(`patent_agent_search_api`)을 import해 아예 import 자체가 실패함(이 모듈은 현재 다른 코드에서 쓰이지 않아 아무도 못 잡아냈던 것으로 보임) → 올바른 모듈/클래스명(`agent_search_api.AgentSearchAPI`)으로 수정
+- `ApiClientFactory.get_all_clients()`가 한국/해외 클라이언트 딕셔너리를 단순 병합해 키 이름이 겹치는 3개(`applicant_search`, `free_search`, `application_number_search`) 한국 클라이언트가 해외 클라이언트에 덮어써짐 → `korean_`/`foreign_` 접두사로 네임스페이스 분리
+
 ### 🔄 진행 중인 작업
-- LSP 오류 해결 (의존성 문제)
-- 코드 품질 개선
-- 배포 자동화
+- ~~LSP 오류 해결 (의존성 문제)~~ ✅ 해결됨
+- 코드 품질 개선 — `ruff`는 CI에서 강제되고 클린하지만, `pyright`는 CI에 연결되어 있지 않고 현재 76개 타입 오류가 있음(주로 `patent_sim.py`, `sse_server.py`). "타입 안정성 적용"은 게이트가 아니라 의존성 설치 수준
+- ~~배포 자동화~~ ✅ 해결됨 — `publish.yml`이 버전 태그 push 시 OIDC 기반 PyPI 배포 + GitHub Release 생성을 자동화
 
 ---
 
