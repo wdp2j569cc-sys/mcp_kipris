@@ -381,9 +381,15 @@ If you use [ClaudeWork](https://claudework.io), this server is also packaged as 
 
 ## Known Limitations
 
-All 17 tools were exercised against the live KIPRIS API and verified to return well-formed output, except:
+All 17 tools were exercised against the live KIPRIS API. 16 of them were verified beyond "returns well-formed output" — their output *field values* were cross-checked, not just their shape:
 
-- **`trademark_search`** — every query against this project's KIPRIS API key returns result code 31 (`DEADLINE_EXPIRED`), regardless of the search term. This looks like the key isn't authorized for `trademarkInfoSearchService` specifically (KIPRIS approves some services separately from general patent search), not a bug in this server — but it also means we haven't been able to confirm the tool's actual output against a working key.
+- **`ipc_search`, `abstract_search`, `agent_search`, `patent_free_search`, `trademark_search`** had a parameter-name mismatch — the tool called its API layer with `docs_count`/`docs_start`, but those methods actually take `num_of_rows`/`page_no`, so the mismatched kwargs went out as query params KIPRIS ignores and the requested count never took effect. Fixed and confirmed live for the first four (requesting N results now returns exactly N); `patent_free_search`'s endpoint turned out to ignore the row-count parameter server-side regardless, so it now trims to N client-side and says so. `trademark_search` got the same fix applied but — see below — couldn't be confirmed live.
+- KIPRIS-reported total match counts (`totalCount`) are shown where the endpoint actually provides one (`ipc/abstract/agent_search`, and `trademark_search` once verifiable); the other 9 paginated tools (`patent_applicant_search`, `patent_application_number_search`, `patent_free_search`, `patent_righter_search`, and the 5 foreign tools) call KIPRIS endpoints that never report a total at all, so they now explicitly say so rather than presenting the row count as if it were one.
+- Field mappings were spot-checked against a real registered patent (`patent_detail_search`'s 40-field response, cross-referenced against KIPRIS's raw XML) and against each other: `patent_applicant_search`'s publication date/number, and results from `patent_application_number_search`, `patent_righter_search`, and `patent_free_search`, were each re-queried through `patent_detail_search` for the same application and matched exactly; the 5 foreign tools were cross-checked against each other (an applicant-search result looked up again by application number, then by its international application/open number) and returned the same record every time.
+
+The one tool still unverified:
+
+- **`trademark_search`** — every query against this project's KIPRIS API key returns result code 31 (`DEADLINE_EXPIRED`), regardless of the search term. This looks like the key isn't authorized for `trademarkInfoSearchService` specifically (KIPRIS approves some services separately from general patent search), not a bug in this server — but it also means the parameter-name fix above, and the tool's actual output, still haven't been confirmed against a working key.
 
 Tracking issue: [#9 — trademark_search verification needed](https://github.com/nuri428/mcp_kipris/issues/9). If you have a KIPRIS API key with trademark search access and can share a raw XML response (success or error), please comment there — we'll use it to verify/fix this tool.
 
