@@ -39,6 +39,29 @@ def test_run_tool_returns_markdown_table_on_success(monkeypatch):
     assert "1020230000001" in result[0].text
 
 
+def test_run_tool_returns_text_on_missing_required_field_instead_of_raising():
+    """run_tool()/run_tool_async() previously had no try/except at all, so a
+    ValidationError (e.g. missing righter_name) propagated all the way out
+    to server.call_tool(), which re-raises it as a bare RuntimeError instead
+    of the graceful TextContent every other tool returns -- confirmed live
+    through the actual server.call_tool() path before this fix.
+    """
+    tool = PatentRighterSearchTool()
+
+    result = tool.run_tool({})
+
+    assert "검증 오류" in result[0].text
+
+
+@pytest.mark.asyncio
+async def test_run_tool_async_returns_text_on_missing_required_field_instead_of_raising():
+    tool = PatentRighterSearchTool()
+
+    result = await tool.run_tool_async({})
+
+    assert "검증 오류" in result[0].text
+
+
 def test_run_tool_reports_empty_result(monkeypatch):
     tool = PatentRighterSearchTool()
     monkeypatch.setattr(tool.api, "sync_search", lambda **kwargs: pd.DataFrame())

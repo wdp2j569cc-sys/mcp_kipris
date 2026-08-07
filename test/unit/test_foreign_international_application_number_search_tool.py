@@ -44,3 +44,17 @@ def test_run_tool_empty_result_also_shows_the_note(monkeypatch):
     text = tool.run_tool({"international_application_number": "PCT/US2023/999999"})[0].text
 
     assert "totalCount를 제공하지 않아" in text
+
+
+def test_run_tool_returns_text_on_missing_required_field_instead_of_raising():
+    """The ValidationError handler used to `raise ValueError(...)` for each
+    known field instead of returning a TextContent, bypassing this tool's
+    own try/except and propagating out to server.call_tool() as a bare
+    RuntimeError -- confirmed live before this fix.
+    """
+    tool = ForeignPatentInternationalApplicationNumberSearchTool()
+
+    result = tool.run_tool({})
+
+    assert "검증 오류" in result[0].text
+    assert "국제출원번호" in result[0].text

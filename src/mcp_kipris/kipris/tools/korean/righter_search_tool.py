@@ -84,31 +84,47 @@ class PatentRighterSearchTool(ToolHandler):
         return [TextContent(type="text", text=header + self.format_table(summary_df))]
 
     def run_tool(self, args: dict) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
-        validated_args = PatentRighterSearchArgs(**args)
-        logger.info(f"righter_name: {validated_args.righter_name}")
+        try:
+            validated_args = PatentRighterSearchArgs(**args)
+            logger.info(f"righter_name: {validated_args.righter_name}")
 
-        response = self.api.sync_search(
-            rightHoler=validated_args.righter_name,
-            docs_start=validated_args.docs_start,
-            docs_count=validated_args.docs_count,
-            desc_sort=validated_args.desc_sort,
-            sort_spec=validated_args.sort_spec,
-        )
+            response = self.api.sync_search(
+                rightHoler=validated_args.righter_name,
+                docs_start=validated_args.docs_start,
+                docs_count=validated_args.docs_count,
+                desc_sort=validated_args.desc_sort,
+                sort_spec=validated_args.sort_spec,
+            )
 
-        return self._format_result(response, validated_args.docs_count)
+            return self._format_result(response, validated_args.docs_count)
+
+        except ValidationError as e:
+            logger.error(f"Validation error: {str(e)}")
+            return [TextContent(type="text", text=f"입력값 검증 오류: {str(e)}")]
+        except Exception as e:
+            logger.error(f"Error occurred: {str(e)}")
+            return [TextContent(type="text", text=f"오류가 발생했습니다: {str(e)}")]
 
     async def run_tool_async(self, args: dict) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
         """권리자 검색 비동기 실행 메서드"""
-        validated_args = PatentRighterSearchArgs(**args)
-        logger.info(f"righter_name: {validated_args.righter_name}")
+        try:
+            validated_args = PatentRighterSearchArgs(**args)
+            logger.info(f"righter_name: {validated_args.righter_name}")
 
-        # 기존 API 클래스를 asyncio.to_thread로 비동기적으로 호출
-        response = await self.api.async_search(
-            rightHoler=validated_args.righter_name,
-            docs_start=validated_args.docs_start,
-            docs_count=validated_args.docs_count,
-            desc_sort=validated_args.desc_sort,
-            sort_spec=validated_args.sort_spec,
-        )
+            # 기존 API 클래스를 asyncio.to_thread로 비동기적으로 호출
+            response = await self.api.async_search(
+                rightHoler=validated_args.righter_name,
+                docs_start=validated_args.docs_start,
+                docs_count=validated_args.docs_count,
+                desc_sort=validated_args.desc_sort,
+                sort_spec=validated_args.sort_spec,
+            )
 
-        return self._format_result(response, validated_args.docs_count)
+            return self._format_result(response, validated_args.docs_count)
+
+        except ValidationError as e:
+            logger.error(f"Validation error: {str(e)}")
+            return [TextContent(type="text", text=f"입력값 검증 오류: {str(e)}")]
+        except Exception as e:
+            logger.error(f"Error occurred: {str(e)}")
+            return [TextContent(type="text", text=f"오류가 발생했습니다: {str(e)}")]

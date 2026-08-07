@@ -80,19 +80,35 @@ class PatentAdvancedSearchTool(ToolHandler):
         )
 
     def run_tool(self, args: dict) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
-        validated_args = PatentAdvancedSearchArgs(**args)
-        logger.info(f"application_number: {validated_args.application_number}")
+        try:
+            validated_args = PatentAdvancedSearchArgs(**args)
+            logger.info(f"application_number: {validated_args.application_number}")
 
-        response = self.api.sync_search(word="", application_number=validated_args.application_number)
-        return _format_response(response)
+            response = self.api.sync_search(word="", application_number=validated_args.application_number)
+            return _format_response(response)
+
+        except ValidationError as e:
+            logger.error(f"Validation error: {str(e)}")
+            return [TextContent(type="text", text=f"입력값 검증 오류: {str(e)}")]
+        except Exception as e:
+            logger.error(f"Error occurred: {str(e)}")
+            return [TextContent(type="text", text=f"오류가 발생했습니다: {str(e)}")]
 
     async def run_tool_async(self, args: dict) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
         """특허 검색 비동기 실행 메서드"""
-        validated_args = PatentAdvancedSearchArgs(**args)
-        logger.info(f"application_number: {validated_args.application_number}")
+        try:
+            validated_args = PatentAdvancedSearchArgs(**args)
+            logger.info(f"application_number: {validated_args.application_number}")
 
-        response = await self.api.async_search(word="", application_number=validated_args.application_number)
-        return _format_response(response)
+            response = await self.api.async_search(word="", application_number=validated_args.application_number)
+            return _format_response(response)
+
+        except ValidationError as e:
+            logger.error(f"Validation error: {str(e)}")
+            return [TextContent(type="text", text=f"입력값 검증 오류: {str(e)}")]
+        except Exception as e:
+            logger.error(f"Error occurred: {str(e)}")
+            return [TextContent(type="text", text=f"오류가 발생했습니다: {str(e)}")]
 
 
 class PatentSearchTool(PatentAdvancedSearchTool):

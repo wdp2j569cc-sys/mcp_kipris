@@ -59,3 +59,21 @@ def test_every_registered_tool_has_a_well_formed_description():
         assert tool.description
         assert tool.inputSchema.get("type") == "object"
         assert "properties" in tool.inputSchema
+
+
+def test_every_registered_tool_returns_text_on_missing_required_fields():
+    """run_tool({}) with every required field omitted must return a
+    TextContent explaining the problem, never raise. `patent_righter_search`,
+    `patent_advanced_search`/`patent_search`, and 3 of the 5 foreign tools
+    previously either had no try/except at all or re-raised ValueError from
+    inside their ValidationError handler, so a missing-field call propagated
+    out of run_tool() entirely -- server.call_tool()'s outer handler then
+    turned it into a bare RuntimeError instead of the normal tool response
+    every other tool gives, confirmed live before this fix.
+    """
+    stdio_handlers = _import_handlers("mcp_kipris.server")
+
+    for name, handler in stdio_handlers.items():
+        result = handler.run_tool({})
+        assert result, f"{name}: run_tool({{}}) returned nothing"
+        assert hasattr(result[0], "text"), f"{name}: run_tool({{}}) did not return TextContent"

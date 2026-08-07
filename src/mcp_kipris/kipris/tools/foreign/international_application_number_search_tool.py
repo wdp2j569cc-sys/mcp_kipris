@@ -109,20 +109,24 @@ class ForeignPatentInternationalApplicationNumberSearchTool(ToolHandler):
             return [TextContent(type="text", text=header + self.format_table(summary_df))]
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")
-            error_details = e.errors()
-            for error in error_details:
+            messages = []
+            for error in e.errors():
                 field = error["loc"][0]
                 if field == "international_application_number":
-                    raise ValueError("Invalid input: 국제출원번호(international_application_number) 정보가 필요합니다.")
+                    messages.append("국제출원번호(international_application_number) 정보가 필요합니다.")
                 elif field == "collection_values":
-                    raise ValueError(
-                        f"Invalid input: 국가 코드(collection_values)는 다음 중 하나여야 합니다: {', '.join(country_dict.keys())}"
+                    messages.append(
+                        f"국가 코드(collection_values)는 다음 중 하나여야 합니다: {', '.join(country_dict.keys())}"
                     )
                 elif field == "sort_field":
-                    raise ValueError(
-                        f"Invalid input: 정렬 기준(sort_field)은 다음 중 하나여야 합니다: {', '.join(sort_field_dict.keys())}"
+                    messages.append(
+                        f"정렬 기준(sort_field)은 다음 중 하나여야 합니다: {', '.join(sort_field_dict.keys())}"
                     )
-            raise ValueError("Invalid input: 입력값이 올바르지 않습니다.")
+            text = " ".join(messages) if messages else str(e)
+            return [TextContent(type="text", text=f"입력값 검증 오류: {text}")]
+        except Exception as e:
+            logger.error(f"Error occurred: {str(e)}")
+            return [TextContent(type="text", text=f"오류가 발생했습니다: {str(e)}")]
 
     def run_tool(self, args: dict) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
         try:
@@ -146,17 +150,21 @@ class ForeignPatentInternationalApplicationNumberSearchTool(ToolHandler):
             return [TextContent(type="text", text=header + self.format_table(summary_df))]
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")
-            error_details = e.errors()
-            for error in error_details:
+            messages = []
+            for error in e.errors():
                 field = error["loc"][0]
                 if field == "international_application_number":
-                    raise ValueError("Invalid input: 국제출원번호(international_application_number) 정보가 필요합니다.")
+                    messages.append("국제출원번호(international_application_number) 정보가 필요합니다.")
                 elif field == "collection_values":
-                    raise ValueError(
-                        f"Invalid input: 국가 코드(collection_values)는 다음 중 하나여야 합니다: {', '.join(country_dict.keys())}"
+                    messages.append(
+                        f"국가 코드(collection_values)는 다음 중 하나여야 합니다: {', '.join(country_dict.keys())}"
                     )
                 elif field == "sort_field":
-                    raise ValueError(
-                        f"Invalid input: 정렬 기준(sort_field)은 다음 중 하나여야 합니다: {', '.join(sort_field_dict.keys())}"
+                    messages.append(
+                        f"정렬 기준(sort_field)은 다음 중 하나여야 합니다: {', '.join(sort_field_dict.keys())}"
                     )
-            raise ValueError("Invalid input: 입력값이 올바르지 않습니다.")
+            text = " ".join(messages) if messages else str(e)
+            return [TextContent(type="text", text=f"입력값 검증 오류: {text}")]
+        except Exception as e:
+            logger.error(f"Error occurred: {str(e)}")
+            return [TextContent(type="text", text=f"오류가 발생했습니다: {str(e)}")]
