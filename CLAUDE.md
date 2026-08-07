@@ -100,10 +100,6 @@ All tool classes are exported from `kipris/tools/__init__.py` with `Korean*` and
 3. Export from `kipris/tools/__init__.py`
 4. Register in both `server.py` and `sse_server.py` with `add_tool_handler()`
 
-### Utility
-
-`src/mcp_kipris/utils/patent_sim.py` contains experimental patent similarity analysis using TF-IDF + cosine similarity and LangChain/Ollama for keyword extraction. This is not registered as an MCP tool.
-
 ## Key Conventions
 
 - All tool args are validated with Pydantic models (`BaseModel`) before use
