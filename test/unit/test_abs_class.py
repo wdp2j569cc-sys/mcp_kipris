@@ -136,3 +136,45 @@ def test_parse_response_returns_data_for_a_successful_response():
 
     assert not result.empty
     assert result.iloc[0]["applicationNumber"] == "123"
+
+
+# --- totalCount: needed for any aggregation across paginated results -------
+
+
+def _response_with_count(item, total_count):
+    # count is a sibling of header/body (response.count.totalCount), not
+    # nested under body -- confirmed against the live KIPRIS API.
+    return {
+        "response": {
+            "header": {"resultCode": "00", "resultMsg": "NORMAL_SERVICE"},
+            "body": {"item": item},
+            "count": {"totalCount": str(total_count)},
+        }
+    }
+
+
+def test_parse_response_attaches_total_count_from_kipris_count_block():
+    api = _api()
+    api.KEY_STRING = "response.body.item"
+
+    result = api.parse_response(_response_with_count({"applicationNumber": "123"}, total_count=42))
+
+    assert result.attrs["total_count"] == 42
+
+
+def test_parse_response_total_count_defaults_to_row_count_when_kipris_omits_it():
+    api = _api()
+    api.KEY_STRING = "response.body.item"
+
+    result = api.parse_response(_response("00", "NORMAL_SERVICE", item={"applicationNumber": "123"}))
+
+    assert result.attrs["total_count"] == 1
+
+
+def test_parse_response_total_count_is_zero_for_no_results_code():
+    api = _api()
+    api.KEY_STRING = "response.body.item"
+
+    result = api.parse_response(_response("20", "NO_RESULTS"))
+
+    assert result.attrs["total_count"] == 0

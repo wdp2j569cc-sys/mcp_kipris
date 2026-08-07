@@ -122,12 +122,18 @@ class ABSKiprisAPI:
             result_code = str(get_nested_key_value(response, "response.header.resultCode")) if response else None
             if result_code in _NO_RESULT_CODES:
                 logger.info(f"KIPRIS: 매칭 결과 없음 ({api_error})")
-                return pd.DataFrame()
+                return self._with_total_count(pd.DataFrame(), 0)
             raise KiprisApiError(
                 code=KiprisErrorCode.API_ERROR,
                 message=f"KIPRIS API 오류: {api_error}",
                 details={"result_code": result_code},
             )
+
+        # totalCount lives at response.count (a sibling of header/body, not
+        # nested under body) and outside KEY_STRING, so it must be read from
+        # the untouched response before we drill down. Confirmed against the
+        # live API: response.body has no "count" key at all.
+        raw_total_count = get_nested_key_value(response, "response.count.totalCount")
 
         res_dict = get_nested_key_value(response, self.KEY_STRING)
         if res_dict is None:
@@ -135,7 +141,23 @@ class ABSKiprisAPI:
             message = get_nested_key_value(response, self.HEADER_KEY_STRING)
             if message:
                 logger.warning(f"KIPRIS API 응답 메시지: {message}")
-            return pd.DataFrame()
+            return self._with_total_count(pd.DataFrame(), raw_total_count, default=0)
         if isinstance(res_dict, t.Dict):
             res_dict = [res_dict]
-        return pd.DataFrame(res_dict)
+        df = pd.DataFrame(res_dict)
+        return self._with_total_count(df, raw_total_count, default=len(df))
+
+    @staticmethod
+    def _with_total_count(df: pd.DataFrame, raw_total_count, default: int = 0) -> pd.DataFrame:
+        """Attach the KIPRIS-reported total match count so callers can report it.
+
+        Falls back to `default` (usually the number of rows actually
+        returned) when this KIPRIS service doesn't include a count block at
+        all, so `df.attrs["total_count"]` is always a usable int rather than
+        sometimes missing.
+        """
+        try:
+            df.attrs["total_count"] = int(raw_total_count) if raw_total_count is not None else default
+        except (TypeError, ValueError):
+            df.attrs["total_count"] = default
+        return df

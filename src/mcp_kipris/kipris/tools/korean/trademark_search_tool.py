@@ -64,37 +64,53 @@ class TrademarkSearchTool(ToolHandler):
             },
         )
 
+    @staticmethod
+    def _page_no(docs_start: int, docs_count: int) -> int:
+        # TrademarkSearchAPI paginates by page number, not by record offset,
+        # so docs_start (an offset, 1 = first record) only maps onto page_no
+        # when it lands on a page boundary for the requested docs_count.
+        return ((docs_start - 1) // docs_count) + 1 if docs_count else 1
+
+    def _format_result(self, response, docs_count: int) -> List[TextContent]:
+        total_count = response.attrs.get("total_count", len(response))
+        if response.empty:
+            return [TextContent(type="text", text=f"there is no result (총 검색결과: {total_count}건)")]
+
+        # 상표 검색 결과의 컬럼이 특허와 다를 수 있으므로, 일반적인 컬럼만 선택
+        available_columns = response.columns.tolist()
+        summary_columns = []
+
+        # 일반적인 상표 정보 컬럼들
+        for col in ["ApplicationNumber", "ApplicationDate", "TrademarkName", "Applicant"]:
+            if col in available_columns:
+                summary_columns.append(col)
+
+        # 만약 위 컬럼들이 없다면, 처음 4개 컬럼을 선택
+        if not summary_columns:
+            summary_columns = available_columns[:4]
+
+        summary_df = response[summary_columns].copy()
+        header = f"총 검색결과: {total_count}건 (표시: {len(summary_df)}건, 요청: {docs_count}건)\n\n"
+        return [TextContent(type="text", text=header + self.format_table(summary_df))]
+
     def run_tool(self, args: dict) -> List[TextContent]:
         try:
             validated_args = TrademarkSearchArgs(**args)
             logger.info(f"Searching for trademark: {validated_args.word}")
 
+            # NOTE: this project's KIPRIS key returns result code 31
+            # (DEADLINE_EXPIRED) for every trademarkInfoSearchService query
+            # (see README / issue #9), so num_of_rows/page_no being honored
+            # here is unverified against a live 00 response.
             response = self.api.sync_search(
                 word=validated_args.word,
-                docs_count=validated_args.docs_count,
-                docs_start=validated_args.docs_start,
+                num_of_rows=validated_args.docs_count,
+                page_no=self._page_no(validated_args.docs_start, validated_args.docs_count),
                 sort_spec=validated_args.sort_spec,
                 desc_sort=validated_args.desc_sort,
             )
 
-            if response.empty:
-                return [TextContent(type="text", text="there is no result")]
-
-            # 상표 검색 결과의 컬럼이 특허와 다를 수 있으므로, 일반적인 컬럼만 선택
-            available_columns = response.columns.tolist()
-            summary_columns = []
-
-            # 일반적인 상표 정보 컬럼들
-            for col in ["ApplicationNumber", "ApplicationDate", "TrademarkName", "Applicant"]:
-                if col in available_columns:
-                    summary_columns.append(col)
-
-            # 만약 위 컬럼들이 없다면, 처음 4개 컬럼을 선택
-            if not summary_columns:
-                summary_columns = available_columns[:4]
-
-            summary_df = response[summary_columns].copy()
-            return [TextContent(type="text", text=self.format_table(summary_df))]
+            return self._format_result(response, validated_args.docs_count)
 
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")
@@ -110,30 +126,13 @@ class TrademarkSearchTool(ToolHandler):
 
             response = await self.api.async_search(
                 word=validated_args.word,
-                docs_count=validated_args.docs_count,
-                docs_start=validated_args.docs_start,
+                num_of_rows=validated_args.docs_count,
+                page_no=self._page_no(validated_args.docs_start, validated_args.docs_count),
                 sort_spec=validated_args.sort_spec,
                 desc_sort=validated_args.desc_sort,
             )
 
-            if response.empty:
-                return [TextContent(type="text", text="there is no result")]
-
-            # 상표 검색 결과의 컬럼이 특허와 다를 수 있으므로, 일반적인 컬럼만 선택
-            available_columns = response.columns.tolist()
-            summary_columns = []
-
-            # 일반적인 상표 정보 컬럼들
-            for col in ["ApplicationNumber", "ApplicationDate", "TrademarkName", "Applicant"]:
-                if col in available_columns:
-                    summary_columns.append(col)
-
-            # 만약 위 컬럼들이 없다면, 처음 4개 컬럼을 선택
-            if not summary_columns:
-                summary_columns = available_columns[:4]
-
-            summary_df = response[summary_columns].copy()
-            return [TextContent(type="text", text=self.format_table(summary_df))]
+            return self._format_result(response, validated_args.docs_count)
 
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")

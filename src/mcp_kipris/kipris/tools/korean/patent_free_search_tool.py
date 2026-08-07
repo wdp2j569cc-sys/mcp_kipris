@@ -74,6 +74,37 @@ class PatentFreeSearchTool(ToolHandler):
             },
         )
 
+    #: this tool hits a different KIPRIS endpoint (freeSearchInfo, not
+    #: getAdvancedSearch) with its own PascalCase item schema
+    #: (PatentUtilityInfo).
+    _SUMMARY_COLUMNS = ["ApplicationNumber", "ApplicationDate", "InventionName", "Applicant"]
+
+    @staticmethod
+    def _page_no(docs_start: int, docs_count: int) -> int:
+        # PatentFreeSearchAPI paginates by page number, not by record
+        # offset, so docs_start (an offset, 1 = first record) only maps
+        # onto page_no when it lands on a page boundary for docs_count.
+        return ((docs_start - 1) // docs_count) + 1 if docs_count else 1
+
+    def _format_result(self, response, docs_count: int) -> List[TextContent]:
+        # Confirmed live: freeSearchInfo ignores numOfRows/pageNo entirely
+        # and always returns a fixed batch (30 rows), with no response.count
+        # block to report a real total from. So `returned_count` here is
+        # just "how many rows this KIPRIS endpoint happened to send back",
+        # not a true match total -- trim to docs_count client-side and say
+        # so, rather than silently returning more rows than requested.
+        returned_count = len(response)
+        if response.empty:
+            return [TextContent(type="text", text=f"there is no result (KIPRIS 반환: {returned_count}건)")]
+
+        summary_df = self.select_columns(response.head(docs_count), self._SUMMARY_COLUMNS)
+        header = (
+            f"KIPRIS 반환: {returned_count}건 중 {len(summary_df)}건 표시 (요청: {docs_count}건)\n"
+            "※ 이 검색 엔드포인트는 KIPRIS가 개수 제한(numOfRows)을 지원하지 않아, "
+            "요청 건수와 무관하게 반환된 결과를 이 도구가 잘라서 보여줍니다.\n\n"
+        )
+        return [TextContent(type="text", text=header + self.format_table(summary_df))]
+
     def run_tool(self, args: dict) -> List[TextContent]:
         try:
             validated_args = PatentFreeSearchArgs(**args)
@@ -81,8 +112,8 @@ class PatentFreeSearchTool(ToolHandler):
 
             response = self.api.sync_search(
                 word=validated_args.word,
-                docs_count=validated_args.docs_count,
-                docs_start=validated_args.docs_start,
+                num_of_rows=validated_args.docs_count,
+                page_no=self._page_no(validated_args.docs_start, validated_args.docs_count),
                 lastvalue=validated_args.lastvalue,
                 patent=validated_args.patent,
                 utility=validated_args.utility,
@@ -90,11 +121,7 @@ class PatentFreeSearchTool(ToolHandler):
                 desc_sort=validated_args.desc_sort,
             )
 
-            if response.empty:
-                return [TextContent(type="text", text="there is no result")]
-
-            summary_df = response[["ApplicationNumber", "ApplicationDate", "InventionName", "Applicant"]].copy()
-            return [TextContent(type="text", text=self.format_table(summary_df))]
+            return self._format_result(response, validated_args.docs_count)
 
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")
@@ -110,8 +137,8 @@ class PatentFreeSearchTool(ToolHandler):
 
             response = await self.api.async_search(
                 word=validated_args.word,
-                docs_count=validated_args.docs_count,
-                docs_start=validated_args.docs_start,
+                num_of_rows=validated_args.docs_count,
+                page_no=self._page_no(validated_args.docs_start, validated_args.docs_count),
                 lastvalue=validated_args.lastvalue,
                 patent=validated_args.patent,
                 utility=validated_args.utility,
@@ -119,11 +146,7 @@ class PatentFreeSearchTool(ToolHandler):
                 desc_sort=validated_args.desc_sort,
             )
 
-            if response.empty:
-                return [TextContent(type="text", text="there is no result")]
-
-            summary_df = response[["ApplicationNumber", "ApplicationDate", "InventionName", "Applicant"]].copy()
-            return [TextContent(type="text", text=self.format_table(summary_df))]
+            return self._format_result(response, validated_args.docs_count)
 
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")

@@ -77,6 +77,34 @@ class IpcSearchTool(ToolHandler):
             },
         )
 
+    #: columns shown in the summary table, in KIPRIS's own camelCase naming
+    _SUMMARY_COLUMNS = [
+        "applicationNumber",
+        "applicationDate",
+        "inventionTitle",
+        "applicantName",
+        "openNumber",
+        "openDate",
+        "registerDate",
+        "ipcNumber",
+    ]
+
+    @staticmethod
+    def _page_no(docs_start: int, docs_count: int) -> int:
+        # IpcSearchAPI paginates by page number, not by record offset, so
+        # docs_start (an offset, 1 = first record) only maps onto page_no
+        # when it lands on a page boundary for the requested docs_count.
+        return ((docs_start - 1) // docs_count) + 1 if docs_count else 1
+
+    def _format_result(self, response, docs_count: int) -> List[TextContent]:
+        total_count = response.attrs.get("total_count", len(response))
+        if response.empty:
+            return [TextContent(type="text", text=f"there is no result (총 검색결과: {total_count}건)")]
+
+        summary_df = self.select_columns(response, self._SUMMARY_COLUMNS)
+        header = f"총 검색결과: {total_count}건 (표시: {len(summary_df)}건, 요청: {docs_count}건)\n\n"
+        return [TextContent(type="text", text=header + self.format_table(summary_df))]
+
     def run_tool(self, args: dict) -> List[TextContent]:
         try:
             validated_args = IpcSearchArgs(**args)
@@ -84,8 +112,8 @@ class IpcSearchTool(ToolHandler):
 
             response = self.api.sync_search(
                 ipc_number=validated_args.ipc_number,
-                docs_count=validated_args.docs_count,
-                docs_start=validated_args.docs_start,
+                num_of_rows=validated_args.docs_count,
+                page_no=self._page_no(validated_args.docs_start, validated_args.docs_count),
                 lastvalue=validated_args.lastvalue,
                 patent=validated_args.patent,
                 utility=validated_args.utility,
@@ -93,11 +121,7 @@ class IpcSearchTool(ToolHandler):
                 desc_sort=validated_args.desc_sort,
             )
 
-            if response.empty:
-                return [TextContent(type="text", text="there is no result")]
-
-            summary_df = response[["applicationNumber", "applicationDate", "inventionTitle", "applicantName"]].copy()
-            return [TextContent(type="text", text=self.format_table(summary_df))]
+            return self._format_result(response, validated_args.docs_count)
 
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")
@@ -113,8 +137,8 @@ class IpcSearchTool(ToolHandler):
 
             response = await self.api.async_search(
                 ipc_number=validated_args.ipc_number,
-                docs_count=validated_args.docs_count,
-                docs_start=validated_args.docs_start,
+                num_of_rows=validated_args.docs_count,
+                page_no=self._page_no(validated_args.docs_start, validated_args.docs_count),
                 lastvalue=validated_args.lastvalue,
                 patent=validated_args.patent,
                 utility=validated_args.utility,
@@ -122,11 +146,7 @@ class IpcSearchTool(ToolHandler):
                 desc_sort=validated_args.desc_sort,
             )
 
-            if response.empty:
-                return [TextContent(type="text", text="there is no result")]
-
-            summary_df = response[["applicationNumber", "applicationDate", "inventionTitle", "applicantName"]].copy()
-            return [TextContent(type="text", text=self.format_table(summary_df))]
+            return self._format_result(response, validated_args.docs_count)
 
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")

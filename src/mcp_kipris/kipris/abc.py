@@ -34,3 +34,15 @@ class ToolHandler:
             return str(value).replace("|", "/").replace("\r\n", " ").replace("\n", " ")
 
         return df.map(_clean).to_markdown(index=index)
+
+    @staticmethod
+    def select_columns(df: pd.DataFrame, columns: list) -> pd.DataFrame:
+        """Select summary columns, defaulting any KIPRIS didn't return for this record to "".
+
+        KIPRIS omits a field entirely (e.g. openDate/registerDate before an
+        application is published/registered) instead of sending it empty, so
+        plain `df[columns]` indexing raises KeyError as soon as a live batch
+        contains a not-yet-published case — which a single hand-picked test
+        record won't surface.
+        """
+        return df.reindex(columns=columns, fill_value="").fillna("")
