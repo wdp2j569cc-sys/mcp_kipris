@@ -38,16 +38,17 @@ bash sse_server_build.sh
 
 ## Running Tests
 
-Tests are standalone scripts that make live API calls — they require a valid `KIPRIS_API_KEY`.
+`test/unit/` is fully mocked (no network access, no `KIPRIS_API_KEY` required). The rest of `test/` makes live API calls and requires a valid `KIPRIS_API_KEY`.
 
 ```bash
-# Run individual test scripts from project root
-python test/test_samsung_patents.py
-python test/test_patent_keyword_search.py
-python test/test_patent_detail_search.py
+# Mocked unit tests only — no API key needed
+pytest test/unit -v
 
-# Run pytest (if using pytest-style tests)
-pytest test/
+# Everything except live-API integration tests
+pytest test/ -m "not integration" -v
+
+# Full suite with coverage (what CI runs — needs KIPRIS_API_KEY)
+pytest test/ -v --cov=src/mcp_kipris --cov-report=term-missing
 ```
 
 ## Linting and Formatting
@@ -68,7 +69,9 @@ Each tool follows a two-layer pattern:
 2. **Tool layer** (`src/mcp_kipris/kipris/tools/`): Wraps the API layer as MCP tools. Each tool extends `ToolHandler` (`kipris/abc.py`) and must implement:
    - `get_tool_description()` → returns `mcp.types.Tool` with name, description, inputSchema, and metadata
    - `run_tool(args)` → sync execution, returns `Sequence[TextContent | ...]`
-   - `run_tool_async(args)` → async execution using `asyncio.to_thread()` (preferred by server)
+   - `run_tool_async(args)` → optional async execution using `asyncio.to_thread()`, preferred by the server when present. `ToolHandler` does not declare this method itself — `call_tool` calls it via duck typing and falls back to `run_tool` on `AttributeError`/`NotImplementedError`.
+
+3. **Cross-cutting utilities** (`src/mcp_kipris/kipris/`): `rate_limiter.py` (token-bucket rate limiting for KIPRIS requests), `errors.py` (`KiprisApiError` / `KiprisErrorCode` structured exceptions), `logging_utils.py` (redacts sensitive data such as API keys from log output), `api_client_factory.py` (centralized construction of the API layer classes).
 
 ### Server Modes
 
@@ -81,11 +84,14 @@ Both servers register all tool handlers at module-level into a `tool_handlers` d
 
 ```
 kipris/tools/
-  korean/    # 7 tools: applicant, free, search, righter, application_number, summary, detail
+  korean/    # 11 tools: applicant, free, search (advanced + deprecated alias), righter,
+             #   application_number, summary, detail, abstract, ipc, agent, trademark
   foreign/   # 5 tools: applicant, application_number, free, international_application_number, international_open_number
 ```
 
 All tool classes are exported from `kipris/tools/__init__.py` with `Korean*` and `Foreign*` prefixes.
+
+> `trademark_search` (`KoreanTrademarkSearchTool`) currently returns KIPRIS result code 31 (`DEADLINE_EXPIRED`) for every query against this project's API key — the key doesn't appear to be authorized for `trademarkInfoSearchService`. The tool's actual output is unverified against a working key; see [tracking issue #9](https://github.com/nuri428/mcp_kipris/issues/9) before relying on or extending it.
 
 ### Adding a New Tool
 
