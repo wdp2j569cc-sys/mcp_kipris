@@ -81,11 +81,13 @@ class PatentRighterSearchTool(ToolHandler):
         )
 
         # 검색 결과가 없는 경우 처리
+        total_count = response.attrs.get("total_count", len(response))
         if response.empty:
-            return [TextContent(type="text", text="검색 결과가 없습니다.")]
+            return [TextContent(type="text", text=f"검색 결과가 없습니다. (총 검색결과: {total_count}건)")]
 
         summary_df = response[["ApplicationNumber", "ApplicationDate", "InventionName", "RegistrationStatus"]].copy()
-        return [TextContent(type="text", text=self.format_table(summary_df))]
+        header = f"총 검색결과: {total_count}건 (표시: {len(summary_df)}건, 요청: {validated_args.docs_count}건)\n\n"
+        return [TextContent(type="text", text=header + self.format_table(summary_df))]
 
     async def run_tool_async(self, args: dict) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
         """권리자 검색 비동기 실행 메서드"""
@@ -102,8 +104,10 @@ class PatentRighterSearchTool(ToolHandler):
         )
 
         # 검색 결과가 없는 경우 처리
+        total_count = response.attrs.get("total_count", len(response))
         if response.empty:
-            return [TextContent(type="text", text="검색 결과가 없습니다.")]
+            return [TextContent(type="text", text=f"검색 결과가 없습니다. (총 검색결과: {total_count}건)")]
 
         summary_df = response[["ApplicationNumber", "ApplicationDate", "InventionName", "RegistrationStatus"]].copy()
-        return [TextContent(type="text", text=self.format_table(summary_df))]
+        header = f"총 검색결과: {total_count}건 (표시: {len(summary_df)}건, 요청: {validated_args.docs_count}건)\n\n"
+        return [TextContent(type="text", text=header + self.format_table(summary_df))]

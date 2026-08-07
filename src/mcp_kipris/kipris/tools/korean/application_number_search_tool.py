@@ -80,11 +80,15 @@ class PatentApplicationNumberSearchTool(ToolHandler):
                 desc_sort=validated_args.desc_sort,
             )
 
+            total_count = response.attrs.get("total_count", len(response))
             if response.empty:
-                return [TextContent(type="text", text="there is no result")]
+                return [TextContent(type="text", text=f"there is no result (총 검색결과: {total_count}건)")]
 
             summary_df = response[["ApplicationNumber", "ApplicationDate", "InventionName", "Applicant"]].copy()
-            return [TextContent(type="text", text=self.format_table(summary_df))]
+            header = (
+                f"총 검색결과: {total_count}건 (표시: {len(summary_df)}건, 요청: {validated_args.docs_count}건)\n\n"
+            )
+            return [TextContent(type="text", text=header + self.format_table(summary_df))]
 
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")
@@ -107,11 +111,15 @@ class PatentApplicationNumberSearchTool(ToolHandler):
                 desc_sort=validated_args.desc_sort,
             )
 
+            total_count = response.attrs.get("total_count", len(response))
             if response.empty:
-                return [TextContent(type="text", text="there is no result")]
+                return [TextContent(type="text", text=f"there is no result (총 검색결과: {total_count}건)")]
 
             summary_df = response[["ApplicationNumber", "ApplicationDate", "InventionName", "Applicant"]].copy()
-            return [TextContent(type="text", text=self.format_table(summary_df))]
+            header = (
+                f"총 검색결과: {total_count}건 (표시: {len(summary_df)}건, 요청: {validated_args.docs_count}건)\n\n"
+            )
+            return [TextContent(type="text", text=header + self.format_table(summary_df))]
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")
             return [TextContent(type="text", text=f"입력값 검증 오류: {str(e)}")]

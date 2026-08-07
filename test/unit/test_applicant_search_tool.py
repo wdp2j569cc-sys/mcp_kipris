@@ -41,7 +41,23 @@ def test_run_tool_reports_empty_result(monkeypatch):
 
     result = tool.run_tool({"applicant": "존재하지않는회사"})
 
-    assert result[0].text == "there is no result"
+    assert "there is no result" in result[0].text
+    assert "0건" in result[0].text
+
+
+def test_run_tool_reports_total_count_from_response_attrs(monkeypatch):
+    tool = PatentApplicantSearchTool()
+
+    def _fake_sync_search(**kwargs):
+        df = _sample_response()
+        df.attrs["total_count"] = 42
+        return df
+
+    monkeypatch.setattr(tool.api, "sync_search", _fake_sync_search)
+
+    text = tool.run_tool({"applicant": "삼성전자"})[0].text
+
+    assert "42건" in text
 
 
 def test_run_tool_rejects_missing_required_field():
