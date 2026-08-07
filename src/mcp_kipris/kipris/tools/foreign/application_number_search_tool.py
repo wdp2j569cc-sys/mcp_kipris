@@ -45,6 +45,12 @@ class ForeignPatentApplicationNumberSearchArgs(BaseModel):
 
 
 class ForeignPatentApplicationNumberSearchTool(ToolHandler):
+    #: this KIPRIS legacy service (openapi/rest/ForeignPatentAdvencedSearchService)
+    #: has no response.count block and no page-size parameter -- confirmed
+    #: live, it always returns a fixed batch per current_page -- so there is
+    #: no genuine total-match figure to report, only which page is shown.
+    _NO_TOTAL_COUNT_NOTE = "※ 이 KIPRIS 엔드포인트는 totalCount를 제공하지 않아 전체 검색결과 수는 확인할 수 없습니다."
+
     def __init__(self):
         super().__init__("foreign_patent_application_number_search")
         self.api = ForeignPatentApplicationNumberSearchAPI(api_key=api_key)
@@ -92,10 +98,13 @@ class ForeignPatentApplicationNumberSearchTool(ToolHandler):
             )
 
             if response.empty:
-                return [TextContent(type="text", text="there is no result")]
+                return [TextContent(type="text", text=f"there is no result\n{self._NO_TOTAL_COUNT_NOTE}")]
 
             summary_df = response[["applicationNo", "applicationDate", "inventionName", "applicant"]].copy()
-            return [TextContent(type="text", text=self.format_table(summary_df))]
+            header = (
+                f"표시: {len(summary_df)}건 (페이지: {validated_args.current_page})\n{self._NO_TOTAL_COUNT_NOTE}\n\n"
+            )
+            return [TextContent(type="text", text=header + self.format_table(summary_df))]
 
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")
@@ -118,10 +127,13 @@ class ForeignPatentApplicationNumberSearchTool(ToolHandler):
             )
 
             if response.empty:
-                return [TextContent(type="text", text="there is no result")]
+                return [TextContent(type="text", text=f"there is no result\n{self._NO_TOTAL_COUNT_NOTE}")]
 
             summary_df = response[["applicationNo", "applicationDate", "inventionName", "applicant"]].copy()
-            return [TextContent(type="text", text=self.format_table(summary_df))]
+            header = (
+                f"표시: {len(summary_df)}건 (페이지: {validated_args.current_page})\n{self._NO_TOTAL_COUNT_NOTE}\n\n"
+            )
+            return [TextContent(type="text", text=header + self.format_table(summary_df))]
 
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")

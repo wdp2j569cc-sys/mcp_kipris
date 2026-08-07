@@ -46,6 +46,12 @@ class ForeignPatentApplicantSearchArgs(BaseModel):
 
 
 class ForeignPatentApplicantSearchTool(ToolHandler):
+    #: this KIPRIS legacy service (openapi/rest/ForeignPatentAdvencedSearchService)
+    #: has no response.count block and no page-size parameter -- confirmed
+    #: live, it always returns a fixed batch per current_page -- so there is
+    #: no genuine total-match figure to report, only which page is shown.
+    _NO_TOTAL_COUNT_NOTE = "※ 이 KIPRIS 엔드포인트는 totalCount를 제공하지 않아 전체 검색결과 수는 확인할 수 없습니다."
+
     def __init__(self):
         super().__init__("foreign_patent_applicant_search")
         self.api = ForeignPatentApplicantSearchAPI(api_key=api_key)
@@ -93,9 +99,10 @@ class ForeignPatentApplicantSearchTool(ToolHandler):
             )
             # ic(response)
             if response.empty:
-                return [TextContent(type="text", text="검색 결과가 없습니다.")]
+                return [TextContent(type="text", text=f"검색 결과가 없습니다.\n{self._NO_TOTAL_COUNT_NOTE}")]
 
-            return [TextContent(type="text", text=self.format_table(response))]
+            header = f"표시: {len(response)}건 (페이지: {validated_args.current_page})\n{self._NO_TOTAL_COUNT_NOTE}\n\n"
+            return [TextContent(type="text", text=header + self.format_table(response))]
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")
             error_details = e.errors()
@@ -127,9 +134,10 @@ class ForeignPatentApplicantSearchTool(ToolHandler):
             )
 
             if response.empty:
-                return [TextContent(type="text", text="검색 결과가 없습니다.")]
+                return [TextContent(type="text", text=f"검색 결과가 없습니다.\n{self._NO_TOTAL_COUNT_NOTE}")]
 
-            return [TextContent(type="text", text=self.format_table(response))]
+            header = f"표시: {len(response)}건 (페이지: {validated_args.current_page})\n{self._NO_TOTAL_COUNT_NOTE}\n\n"
+            return [TextContent(type="text", text=header + self.format_table(response))]
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")
             error_details = e.errors()
