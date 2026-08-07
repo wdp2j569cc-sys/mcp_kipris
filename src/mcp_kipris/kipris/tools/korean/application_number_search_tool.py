@@ -1,12 +1,8 @@
-import asyncio
 import logging
 import os
-import typing as t
 from collections.abc import Sequence
-from typing import List
 
-import pandas as pd
-from mcp.types import EmbeddedResource, ImageContent, TextContent, Tool
+from mcp.types import TextContent, Tool
 from pydantic import BaseModel, Field, ValidationError
 
 from mcp_kipris.kipris.abc import ToolHandler
@@ -40,8 +36,6 @@ class PatentApplicationNumberSearchTool(ToolHandler):
         self.description = "Patent search by application number, this tool is for korean patent search"
 
     def get_tool_description(self) -> Tool:
-        import sys
-
         logger.info(f"get_tool_description: {self.name}")
         tool = Tool(
             name=self.name,

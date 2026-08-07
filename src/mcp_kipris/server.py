@@ -1,9 +1,7 @@
 import datetime
 import logging
 import os
-import sys
 from collections.abc import Sequence
-from typing import List
 
 from dotenv import load_dotenv
 from mcp.server import Server

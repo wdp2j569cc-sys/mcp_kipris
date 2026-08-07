@@ -1,11 +1,8 @@
 import logging
 import os
-import typing as t
-from collections.abc import Sequence
 from typing import List
 
-import pandas as pd
-from mcp.types import EmbeddedResource, ImageContent, TextContent, Tool
+from mcp.types import TextContent, Tool
 from pydantic import BaseModel, Field, ValidationError, field_validator
 
 from mcp_kipris.kipris.abc import ToolHandler

@@ -1,9 +1,7 @@
 import logging
 import os
-import typing as t
 from collections.abc import Sequence
 
-import pandas as pd
 
 # from icecream import ic
 from mcp.types import EmbeddedResource, ImageContent, TextContent, Tool

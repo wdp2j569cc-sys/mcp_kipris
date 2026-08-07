@@ -7,8 +7,6 @@ import os
 import logging
 import os
 import re
-import urllib.parse
-from typing import Any, Dict, Optional
 
 
 def redact_sensitive_data(text: str) -> str:

@@ -3,7 +3,6 @@ import json
 import logging
 import traceback
 import typing as t
-from logging import getLogger
 from xml.parsers.expat import ExpatError
 
 import httpx
