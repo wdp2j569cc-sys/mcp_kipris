@@ -38,21 +38,6 @@ def test_token_bucket_refuses_when_insufficient_tokens():
     assert bucket.tokens == 5
 
 
-def test_token_bucket_time_until_available_is_zero_when_enough_tokens():
-    bucket = TokenBucket(capacity=5, refill_rate=1)
-
-    assert bucket.time_until_available(3) == 0.0
-
-
-def test_token_bucket_time_until_available_is_positive_when_depleted():
-    bucket = TokenBucket(capacity=5, refill_rate=2)
-    bucket.consume(5)
-
-    wait_seconds = bucket.time_until_available(4)
-
-    assert wait_seconds == pytest.approx(2.0)
-
-
 def test_rate_limiter_allows_requests_under_the_limit():
     limiter = RateLimiter(max_requests_per_minute=2)
 

@@ -61,32 +61,6 @@ class TokenBucket:
             else:
                 return False
 
-    def time_until_available(self, tokens: int) -> float:
-        """
-        Calculate time until specified tokens are available.
-
-        Args:
-            tokens: Number of tokens needed
-
-        Returns:
-            Seconds until tokens will be available
-        """
-        with self._lock:
-            if self.tokens >= tokens:
-                return 0.0
-
-            now = datetime.now()
-            time_elapsed = (now - self.last_refill).total_seconds()
-            tokens_needed = tokens - self.tokens
-
-            if tokens_needed <= 0:
-                return 0.0
-
-            # Calculate time needed for refill
-            tokens_per_second = self.refill_rate
-            seconds_needed = tokens_needed / tokens_per_second
-            return seconds_needed
-
 
 class RateLimiter:
     """Rate limiter for KIPRIS API requests."""
