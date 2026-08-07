@@ -54,7 +54,7 @@ def main():
             if isinstance(result[0], TextContent):
                 with open("test_righter_search_result.json", "w", encoding="utf-8") as f:
                     f.write(result[0].text)
-                print(f"\n결과가 test_righter_search_result.json 파일에 저장되었습니다.")
+                print("\n결과가 test_righter_search_result.json 파일에 저장되었습니다.")
     except Exception as e:
         print(f"결과 저장 중 오류 발생: {e}")
 

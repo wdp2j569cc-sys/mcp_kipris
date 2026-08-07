@@ -3,7 +3,6 @@ Secure logging utilities for KIPRIS MCP server.
 Provides redaction functions to prevent sensitive data exposure in logs.
 """
 
-import os
 import logging
 import os
 import re

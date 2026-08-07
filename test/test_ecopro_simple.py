@@ -136,11 +136,11 @@ def main():
 
             # 결과 저장
             df.to_csv("ecopro_patents_results.csv", index=False, encoding="utf-8-sig")
-            print(f"\n결과가 ecopro_patents_results.csv 파일에 저장되었습니다.")
+            print("\n결과가 ecopro_patents_results.csv 파일에 저장되었습니다.")
 
             # JSON 형식으로도 저장
             df.to_json("ecopro_patents_results.json", orient="records", indent=2, force_ascii=False)
-            print(f"결과가 ecopro_patents_results.json 파일에도 저장되었습니다.")
+            print("결과가 ecopro_patents_results.json 파일에도 저장되었습니다.")
     except Exception as e:
         print(f"실행 중 오류 발생: {e}")
 

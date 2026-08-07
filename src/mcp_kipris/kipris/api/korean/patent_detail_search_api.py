@@ -23,8 +23,6 @@ class PatentDetailSearchAPI(ABSKiprisAPI):
         Returns:
             pd.DataFrame: _description_
         """
-        # url encoding 제거. urlencode를 sync_call, async_call에서 처리함.
-        parameters = {**kwargs}
         logger.info(f"application_number: {application_number}")
 
         response = self.sync_call(
@@ -40,8 +38,6 @@ class PatentDetailSearchAPI(ABSKiprisAPI):
         Returns:
             pd.DataFrame: _description_
         """
-        # url encoding 제거. urlencode를 sync_call, async_call에서 처리함.
-        parameters = {**kwargs}
         logger.info(f"application_number: {application_number}")
 
         response = await self.async_call(

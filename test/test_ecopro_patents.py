@@ -73,14 +73,14 @@ def save_results(result):
                 # JSON 파일로 저장
                 with open("ecopro_patents_results.json", "w", encoding="utf-8") as f:
                     f.write(result[0].text)
-                print(f"\n결과가 ecopro_patents_results.json 파일에 저장되었습니다.")
+                print("\n결과가 ecopro_patents_results.json 파일에 저장되었습니다.")
 
                 # 데이터프레임으로 변환하여 CSV로도 저장
                 try:
                     data = json.loads(result[0].text)
                     df = pd.DataFrame(data)
                     df.to_csv("ecopro_patents_results.csv", index=False, encoding="utf-8-sig")
-                    print(f"결과가 ecopro_patents_results.csv 파일에도 저장되었습니다.")
+                    print("결과가 ecopro_patents_results.csv 파일에도 저장되었습니다.")
                 except Exception as e:
                     print(f"CSV 변환 중 오류: {e}")
     except Exception as e:
