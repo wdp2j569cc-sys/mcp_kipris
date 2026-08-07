@@ -71,7 +71,7 @@ Each tool follows a two-layer pattern:
    - `run_tool(args)` → sync execution, returns `Sequence[TextContent | ...]`
    - `run_tool_async(args)` → optional async execution using `asyncio.to_thread()`, preferred by the server when present. `ToolHandler` does not declare this method itself — `call_tool` calls it via duck typing and falls back to `run_tool` on `AttributeError`/`NotImplementedError`.
 
-3. **Cross-cutting utilities** (`src/mcp_kipris/kipris/`): `rate_limiter.py` (token-bucket rate limiting for KIPRIS requests), `errors.py` (`KiprisApiError` / `KiprisErrorCode` structured exceptions), `logging_utils.py` (redacts sensitive data such as API keys from log output), `api_client_factory.py` (centralized construction of the API layer classes).
+3. **Cross-cutting utilities** (`src/mcp_kipris/kipris/`): `rate_limiter.py` (token-bucket rate limiting for KIPRIS requests), `errors.py` (`KiprisApiError` / `KiprisErrorCode` structured exceptions), `logging_utils.py` (redacts sensitive data such as API keys from log output).
 
 ### Server Modes
 
