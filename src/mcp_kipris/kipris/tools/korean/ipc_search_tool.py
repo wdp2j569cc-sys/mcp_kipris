@@ -31,6 +31,16 @@ class IpcSearchArgs(BaseModel):
     docs_count: int = Field(10, description="검색 결과 수 (기본값: 10, 범위: 1-30)")
     desc_sort: bool = Field(True, description="내림차순 정렬 여부 (기본값: true)")
     sort_spec: str = Field("AD", description="정렬 기준 필드 (PD-공고일자, AD-출원일자, GD-등록일자, OPD-공개일자)")
+    applicant: str = Field("", description="출원인 필터 — IPC 코드와 결합해서 특정 출원인의 특허만 좁혀볼 때 사용")
+    application_date: str = Field("", description="출원일 필터. 단일 날짜(YYYYMMDD) 또는 범위(YYYYMMDD~YYYYMMDD)")
+    open_date: str = Field(
+        "",
+        description=(
+            "공개일 필터. 단일 날짜(YYYYMMDD) 또는 범위(YYYYMMDD~YYYYMMDD). "
+            "특정 월의 공개 건수를 집계할 때 이 필터로 직접 좁히면 docs_count를 크게 잡을 필요가 없습니다."
+        ),
+    )
+    register_date: str = Field("", description="등록일 필터. 단일 날짜(YYYYMMDD) 또는 범위(YYYYMMDD~YYYYMMDD)")
 
 
 class IpcSearchTool(ToolHandler):
@@ -68,18 +78,39 @@ class IpcSearchTool(ToolHandler):
                         "enum": ["PD", "AD", "GD", "OPD"],
                         "default": "AD",
                     },
+                    "applicant": {
+                        "type": "string",
+                        "description": "출원인 필터 — IPC 코드와 결합해서 특정 출원인의 특허만 좁혀볼 때 사용",
+                    },
+                    "application_date": {
+                        "type": "string",
+                        "description": "출원일 필터. 단일 날짜(YYYYMMDD) 또는 범위(YYYYMMDD~YYYYMMDD)",
+                    },
+                    "open_date": {
+                        "type": "string",
+                        "description": (
+                            "공개일 필터. 단일 날짜(YYYYMMDD) 또는 범위(YYYYMMDD~YYYYMMDD). "
+                            "예: 2026년 7월 공개 건만 보려면 '20260701~20260731'"
+                        ),
+                    },
+                    "register_date": {
+                        "type": "string",
+                        "description": "등록일 필터. 단일 날짜(YYYYMMDD) 또는 범위(YYYYMMDD~YYYYMMDD)",
+                    },
                 },
                 "required": ["ipc_number"],
             },
             metadata={
                 "usage_hint": (
                     "IPC 코드로 한국 특허를 검색하고 특허에 대한 정보를 제공합니다. 특정 월의 공개 건수 등 "
-                    "공개일 기준 집계가 필요하면, 목록 결과의 openDate만으로 집계하세요(건별 상세조회 불필요) — "
-                    "이 도구는 docs_count를 충분히 크게 잡아야 원하는 시기의 건이 결과에 포함됩니다."
+                    "공개일 기준 집계가 필요하면 open_date 필터(예: '20260701~20260731')로 직접 좁혀서 "
+                    "조회하세요 — docs_count를 크게 잡고 목록에서 걸러낼 필요가 없습니다. applicant 필터로 "
+                    "IPC 코드와 출원인을 결합해서 검색할 수도 있습니다."
                 ),
                 "example_user_queries": [
                     "'H01L' IPC 코드를 가진 특허를 검색해줘",
                     "'H01M' IPC 코드로 2026년 7월에 공개된 특허가 몇 건이야?",
+                    "'H01L' IPC 코드 중에서 삼성전자가 출원한 것만 보여줘",
                 ],
                 "preferred_response_style": (
                     "IPC 코드, 출원일자, 발명의 명칭, 출원인을 포함하여 최근 순으로 표 형태로 정리해주세요. "
@@ -130,6 +161,10 @@ class IpcSearchTool(ToolHandler):
                 utility=validated_args.utility,
                 sort_spec=validated_args.sort_spec,
                 desc_sort=validated_args.desc_sort,
+                applicant=validated_args.applicant,
+                application_date=validated_args.application_date,
+                open_date=validated_args.open_date,
+                register_date=validated_args.register_date,
             )
 
             return self._format_result(response, validated_args.docs_count)
@@ -155,6 +190,10 @@ class IpcSearchTool(ToolHandler):
                 utility=validated_args.utility,
                 sort_spec=validated_args.sort_spec,
                 desc_sort=validated_args.desc_sort,
+                applicant=validated_args.applicant,
+                application_date=validated_args.application_date,
+                open_date=validated_args.open_date,
+                register_date=validated_args.register_date,
             )
 
             return self._format_result(response, validated_args.docs_count)

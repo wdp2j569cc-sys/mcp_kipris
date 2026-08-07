@@ -28,6 +28,16 @@ class PatentFreeSearchArgs(BaseModel):
     docs_count: int = Field(10, description="Number of documents to return")
     desc_sort: bool = Field(True, description="Sort in descending order")
     sort_spec: str = Field("AD", description="Sort specification")
+    applicant: str = Field("", description="출원인 필터 — 검색어와 결합해서 특정 출원인의 특허만 좁혀볼 때 사용")
+    application_date: str = Field("", description="출원일 필터. 단일 날짜(YYYYMMDD) 또는 범위(YYYYMMDD~YYYYMMDD)")
+    open_date: str = Field(
+        "",
+        description=(
+            "공개일 필터. 단일 날짜(YYYYMMDD) 또는 범위(YYYYMMDD~YYYYMMDD). "
+            "docs_count와 무관하게 KIPRIS 응답 자체를 이 필터로 좁혀서 받아옵니다."
+        ),
+    )
+    register_date: str = Field("", description="등록일 필터. 단일 날짜(YYYYMMDD) 또는 범위(YYYYMMDD~YYYYMMDD)")
 
 
 class PatentFreeSearchTool(ToolHandler):
@@ -61,12 +71,39 @@ class PatentFreeSearchTool(ToolHandler):
                         "enum": ["PD", "AD", "GD", "OPD"],
                         "default": "AD",
                     },
+                    "applicant": {
+                        "type": "string",
+                        "description": "출원인 필터 — 검색어와 결합해서 특정 출원인의 특허만 좁혀볼 때 사용",
+                    },
+                    "application_date": {
+                        "type": "string",
+                        "description": "출원일 필터. 단일 날짜(YYYYMMDD) 또는 범위(YYYYMMDD~YYYYMMDD)",
+                    },
+                    "open_date": {
+                        "type": "string",
+                        "description": (
+                            "공개일 필터. 단일 날짜(YYYYMMDD) 또는 범위(YYYYMMDD~YYYYMMDD). "
+                            "예: 2026년 7월 공개 건만 보려면 '20260701~20260731'"
+                        ),
+                    },
+                    "register_date": {
+                        "type": "string",
+                        "description": "등록일 필터. 단일 날짜(YYYYMMDD) 또는 범위(YYYYMMDD~YYYYMMDD)",
+                    },
                 },
                 "required": ["word"],
             },
             metadata={
-                "usage_hint": "키워드로 한국 특허를 검색하고 특허에 대한 정보를 제공합니다.",
-                "example_user_queries": ["'이차전지' 관련 특허를 검색해줘"],
+                "usage_hint": (
+                    "키워드로 한국 특허를 검색하고 특허에 대한 정보를 제공합니다. open_date 필터(예: "
+                    "'20260701~20260731')로 공개일 범위를 좁힐 수 있고, applicant 필터로 검색어와 출원인을 "
+                    "결합해서 검색할 수도 있습니다. 이 엔드포인트는 docs_count(개수 제한)를 지원하지 않으므로, "
+                    "전체 건수 집계에는 이런 필터로 범위를 좁히는 쪽이 더 정확합니다."
+                ),
+                "example_user_queries": [
+                    "'이차전지' 관련 특허를 검색해줘",
+                    "'이차전지' 키워드로 삼성전자가 2026년 7월에 공개한 특허를 찾아줘",
+                ],
                 "preferred_response_style": (
                     "키워드, 출원일자, 발명의 명칭, 출원인을 포함하여 최근 순으로 표 형태로 정리해주세요. "
                     "간결하고 이해하기 쉽게 응답해 주세요."
@@ -119,6 +156,10 @@ class PatentFreeSearchTool(ToolHandler):
                 utility=validated_args.utility,
                 sort_spec=validated_args.sort_spec,
                 desc_sort=validated_args.desc_sort,
+                applicant=validated_args.applicant,
+                application_date=validated_args.application_date,
+                open_date=validated_args.open_date,
+                register_date=validated_args.register_date,
             )
 
             return self._format_result(response, validated_args.docs_count)
@@ -144,6 +185,10 @@ class PatentFreeSearchTool(ToolHandler):
                 utility=validated_args.utility,
                 sort_spec=validated_args.sort_spec,
                 desc_sort=validated_args.desc_sort,
+                applicant=validated_args.applicant,
+                application_date=validated_args.application_date,
+                open_date=validated_args.open_date,
+                register_date=validated_args.register_date,
             )
 
             return self._format_result(response, validated_args.docs_count)
