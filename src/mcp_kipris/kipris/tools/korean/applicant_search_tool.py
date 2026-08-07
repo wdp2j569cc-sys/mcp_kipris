@@ -97,11 +97,23 @@ class PatentApplicantSearchTool(ToolHandler):
     #: rows this page returned.
     _NO_TOTAL_COUNT_NOTE = "※ 이 KIPRIS 엔드포인트는 totalCount를 제공하지 않아 전체 검색결과 수는 확인할 수 없습니다."
 
+    #: this legacy schema's own field names for 공개일/공개번호 -- confirmed
+    #: live -- are "Opening*", not the "open*" camelCase used by ipc/
+    #: abstract/agent_search's different (getAdvancedSearch) endpoint.
+    _SUMMARY_COLUMNS = [
+        "ApplicationNumber",
+        "ApplicationDate",
+        "InventionName",
+        "Applicant",
+        "OpeningNumber",
+        "OpeningDate",
+    ]
+
     def _format_result(self, response, docs_count: int) -> Sequence[TextContent]:
         if response.empty:
             return [TextContent(type="text", text=f"there is no result\n{self._NO_TOTAL_COUNT_NOTE}")]
 
-        summary_df = response[["ApplicationNumber", "ApplicationDate", "InventionName", "Applicant"]].copy()
+        summary_df = self.select_columns(response, self._SUMMARY_COLUMNS)
         header = f"표시: {len(summary_df)}건 (요청: {docs_count}건)\n{self._NO_TOTAL_COUNT_NOTE}\n\n"
         return [TextContent(type="text", text=header + self.format_table(summary_df))]
 

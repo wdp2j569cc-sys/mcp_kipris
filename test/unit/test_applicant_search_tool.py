@@ -62,6 +62,41 @@ def test_run_tool_does_not_claim_a_total_count(monkeypatch):
     assert "totalCount를 제공하지 않아" in text
 
 
+def test_run_tool_includes_opening_date_and_number_when_present(monkeypatch):
+    """OpeningDate/OpeningNumber (공개일/공개번호) are this legacy schema's own
+    field names -- confirmed live -- distinct from the "open*" camelCase
+    used by ipc/abstract/agent_search's different endpoint.
+    """
+    tool = PatentApplicantSearchTool()
+
+    def _fake_sync_search(**kwargs):
+        df = _sample_response()
+        df["OpeningNumber"] = "1020240012345"
+        df["OpeningDate"] = "20240601"
+        return df
+
+    monkeypatch.setattr(tool.api, "sync_search", _fake_sync_search)
+
+    text = tool.run_tool({"applicant": "삼성전자"})[0].text
+
+    assert "1020240012345" in text
+    assert "20240601" in text
+
+
+def test_run_tool_defaults_opening_columns_to_empty_when_absent(monkeypatch):
+    """Not every record has been published yet, so OpeningDate/OpeningNumber
+    can be missing from the response -- selecting them must not raise
+    KeyError.
+    """
+    tool = PatentApplicantSearchTool()
+    monkeypatch.setattr(tool.api, "sync_search", lambda **kwargs: _sample_response())
+
+    result = tool.run_tool({"applicant": "삼성전자"})
+
+    assert "오류" not in result[0].text
+    assert "1020230000001" in result[0].text
+
+
 def test_run_tool_rejects_missing_required_field():
     tool = PatentApplicantSearchTool()
 
