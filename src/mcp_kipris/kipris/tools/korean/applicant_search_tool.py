@@ -61,7 +61,11 @@ class PatentApplicantSearchTool(ToolHandler):
                     "utility": {"type": "boolean", "description": "실용신안 포함 여부 (기본값: true)"},
                     "lastvalue": {
                         "type": "string",
-                        "description": "특허 등록 상태 (A:공개, C:정정공개, F:공고, G:정정공고, I:무효공고, J:취소공고, R:재공고, 공백:전체)",
+                        "description": (
+                            "특허 등록 상태 (A:공개, C:정정공개, F:공고, G:정정공고, I:무효공고, J:취소공고, R:재공고, 공백:전체). "
+                            "공백(전체)으로 조회하면 이미 '등록' 상태로 넘어간 건은 공개일(OpeningDate)이 "
+                            "비어서 나오는 경우가 많으니, 공개일 기준 집계가 목적이면 A로 필터링하세요."
+                        ),
                         "enum": ["A", "C", "F", "G", "I", "J", "R", ""],
                     },
                     "sort_spec": {
@@ -75,11 +79,16 @@ class PatentApplicantSearchTool(ToolHandler):
                 "required": ["applicant"],
             },
             metadata={
-                "usage_hint": "출원인(특허를 출원한 사람 또는 회사)의 이름으로 한국 특허를 검색합니다. 권리자(특허권자)와는 다릅니다.",
+                "usage_hint": (
+                    "출원인(특허를 출원한 사람 또는 회사)의 이름으로 한국 특허를 검색합니다. 권리자(특허권자)와는 다릅니다. "
+                    "특정 월의 공개 건수 등 공개일 기준 집계가 필요하면, 건별 상세조회 없이도 lastvalue=A로 "
+                    "필터링해서 목록 결과의 OpeningDate/OpeningNumber만으로 집계할 수 있습니다."
+                ),
                 "example_user_queries": [
                     "삼성전자가 출원한 특허 보여줘",
                     "LG화학이 최근 출원한 특허 5건 검색해줘",
                     "네이버가 출원한 특허 목록 알려줘",
+                    "한화에어로스페이스가 2026년 7월에 공개한 특허가 몇 건이야?",
                 ],
                 "preferred_response_style": (
                     "출원인, 출원일자, 발명의 명칭, 출원번호를 포함하여 최근 순으로 표 형태로 정리해주세요. "

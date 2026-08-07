@@ -52,7 +52,11 @@ class IpcSearchTool(ToolHandler):
                     "utility": {"type": "boolean", "description": "실용신안 포함 여부 (기본값: true)"},
                     "lastvalue": {
                         "type": "string",
-                        "description": "특허 등록 상태 (A:공개, C:정정공개, F:공고, G:정정공고, I:무효공고, J:취소공고, R:재공고, 공백:전체)",
+                        "description": (
+                            "특허 등록 상태 (A:공개, C:정정공개, F:공고, G:정정공고, I:무효공고, J:취소공고, R:재공고, 공백:전체). "
+                            "openDate/openNumber는 등록 완료된 건에서도 안정적으로 채워지므로 별도 필터 없이도 "
+                            "공개일 기준 집계가 가능하지만, 공개 상태 건만 보고 싶으면 A로 필터링하세요."
+                        ),
                         "enum": ["A", "C", "F", "G", "I", "J", "R", ""],
                     },
                     "docs_start": {"type": "integer", "description": "검색 시작 위치 (기본값: 1)"},
@@ -68,8 +72,15 @@ class IpcSearchTool(ToolHandler):
                 "required": ["ipc_number"],
             },
             metadata={
-                "usage_hint": "IPC 코드로 한국 특허를 검색하고 특허에 대한 정보를 제공합니다.",
-                "example_user_queries": ["'H01L' IPC 코드를 가진 특허를 검색해줘"],
+                "usage_hint": (
+                    "IPC 코드로 한국 특허를 검색하고 특허에 대한 정보를 제공합니다. 특정 월의 공개 건수 등 "
+                    "공개일 기준 집계가 필요하면, 목록 결과의 openDate만으로 집계하세요(건별 상세조회 불필요) — "
+                    "이 도구는 docs_count를 충분히 크게 잡아야 원하는 시기의 건이 결과에 포함됩니다."
+                ),
+                "example_user_queries": [
+                    "'H01L' IPC 코드를 가진 특허를 검색해줘",
+                    "'H01M' IPC 코드로 2026년 7월에 공개된 특허가 몇 건이야?",
+                ],
                 "preferred_response_style": (
                     "IPC 코드, 출원일자, 발명의 명칭, 출원인을 포함하여 최근 순으로 표 형태로 정리해주세요. "
                     "간결하고 이해하기 쉽게 응답해 주세요."
