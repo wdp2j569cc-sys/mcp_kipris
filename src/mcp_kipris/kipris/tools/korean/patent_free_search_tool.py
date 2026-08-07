@@ -120,22 +120,29 @@ class PatentFreeSearchTool(ToolHandler):
         # onto page_no when it lands on a page boundary for docs_count.
         return ((docs_start - 1) // docs_count) + 1 if docs_count else 1
 
-    def _format_result(self, response, docs_count: int) -> List[TextContent]:
+    def _format_result(self, response, docs_start: int, docs_count: int) -> List[TextContent]:
         # Confirmed live: freeSearchInfo ignores numOfRows/pageNo entirely
         # and always returns a fixed batch (30 rows), with no response.count
         # block to report a real total from. So `returned_count` here is
         # just "how many rows this KIPRIS endpoint happened to send back",
-        # not a true match total -- trim to docs_count client-side and say
-        # so, rather than silently returning more rows than requested.
+        # not a true match total.
         returned_count = len(response)
         if response.empty:
             return [TextContent(type="text", text=f"there is no result (KIPRIS 반환: {returned_count}건)")]
 
-        summary_df = self.select_columns(response.head(docs_count), self._SUMMARY_COLUMNS)
+        # docs_start is a client-side offset into that fixed batch --
+        # confirmed live that without this slice, every requested "page"
+        # (any docs_start) returned the identical first docs_count rows.
+        # This still can't go beyond whatever KIPRIS actually sent back.
+        start_index = max(docs_start - 1, 0)
+        page_df = response.iloc[start_index : start_index + docs_count]
+        summary_df = self.select_columns(page_df, self._SUMMARY_COLUMNS)
         header = (
-            f"KIPRIS 반환: {returned_count}건 중 {len(summary_df)}건 표시 (요청: {docs_count}건)\n"
-            "※ 이 검색 엔드포인트는 KIPRIS가 개수 제한(numOfRows)을 지원하지 않아, "
-            "요청 건수와 무관하게 반환된 결과를 이 도구가 잘라서 보여줍니다.\n\n"
+            f"KIPRIS 반환: {returned_count}건 중 {len(summary_df)}건 표시 "
+            f"(요청: {docs_count}건, 시작 위치: {docs_start})\n"
+            "※ 이 검색 엔드포인트는 KIPRIS가 개수 제한(numOfRows)을 지원하지 않아 항상 고정된 배치를 "
+            f"반환합니다. 이 도구는 그 배치 안에서만 docs_start로 페이지를 나누며, KIPRIS가 반환한 "
+            f"{returned_count}건을 넘어서는 페이지는 조회할 수 없습니다.\n\n"
         )
         return [TextContent(type="text", text=header + self.format_table(summary_df))]
 
@@ -159,7 +166,7 @@ class PatentFreeSearchTool(ToolHandler):
                 register_date=validated_args.register_date,
             )
 
-            return self._format_result(response, validated_args.docs_count)
+            return self._format_result(response, validated_args.docs_start, validated_args.docs_count)
 
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")
@@ -188,7 +195,7 @@ class PatentFreeSearchTool(ToolHandler):
                 register_date=validated_args.register_date,
             )
 
-            return self._format_result(response, validated_args.docs_count)
+            return self._format_result(response, validated_args.docs_start, validated_args.docs_count)
 
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")

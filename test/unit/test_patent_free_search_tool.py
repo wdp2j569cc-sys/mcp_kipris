@@ -71,3 +71,22 @@ def test_run_tool_reports_returned_count_when_within_docs_count(monkeypatch):
     text = tool.run_tool({"word": "반도체", "docs_count": 10})[0].text
 
     assert "3건 중 3건 표시" in text
+
+
+def test_run_tool_docs_start_pages_within_the_fixed_batch(monkeypatch):
+    """Confirmed live: requesting docs_start=6 used to return the exact
+    same rows as docs_start=1 (the client-side trim always did
+    response.head(docs_count), ignoring docs_start entirely) -- every
+    "page" looked identical. docs_start must offset into the batch KIPRIS
+    actually returned.
+    """
+    tool = PatentFreeSearchTool()
+    monkeypatch.setattr(tool.api, "sync_search", lambda **kwargs: _mock_response(row_count=30))
+
+    page1 = tool.run_tool({"word": "반도체", "docs_count": 5, "docs_start": 1})[0].text
+    page2 = tool.run_tool({"word": "반도체", "docs_count": 5, "docs_start": 6})[0].text
+
+    assert "1020230000000" in page1
+    assert "1020230000005" in page2
+    assert "1020230000000" not in page2
+    assert "1020230000005" not in page1
