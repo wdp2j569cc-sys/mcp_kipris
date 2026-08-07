@@ -2,8 +2,6 @@ import logging
 import os
 from collections.abc import Sequence
 
-
-# from icecream import ic
 from mcp.types import EmbeddedResource, ImageContent, TextContent, Tool
 from pydantic import BaseModel, Field, ValidationError, field_validator
 
