@@ -66,6 +66,21 @@ class PatentApplicationNumberSearchTool(ToolHandler):
         logger.info(f"get_tool_description: {tool}")
         return tool
 
+    #: applicationNumberSearchInfo (the openapi/rest legacy service family)
+    #: has no response.count block -- confirmed live, unlike the
+    #: kipo-api/kipi getAdvancedSearch family used by ipc/abstract/
+    #: agent_search -- so there is no genuine total-match figure to report
+    #: here, only how many rows this page returned.
+    _NO_TOTAL_COUNT_NOTE = "※ 이 KIPRIS 엔드포인트는 totalCount를 제공하지 않아 전체 검색결과 수는 확인할 수 없습니다."
+
+    def _format_result(self, response, docs_count: int) -> Sequence[TextContent]:
+        if response.empty:
+            return [TextContent(type="text", text=f"there is no result\n{self._NO_TOTAL_COUNT_NOTE}")]
+
+        summary_df = response[["ApplicationNumber", "ApplicationDate", "InventionName", "Applicant"]].copy()
+        header = f"표시: {len(summary_df)}건 (요청: {docs_count}건)\n{self._NO_TOTAL_COUNT_NOTE}\n\n"
+        return [TextContent(type="text", text=header + self.format_table(summary_df))]
+
     def run_tool(self, args: dict) -> Sequence[TextContent]:
         try:
             validated_args = PatentApplicationNumberSearchArgs(**args)
@@ -80,15 +95,7 @@ class PatentApplicationNumberSearchTool(ToolHandler):
                 desc_sort=validated_args.desc_sort,
             )
 
-            total_count = response.attrs.get("total_count", len(response))
-            if response.empty:
-                return [TextContent(type="text", text=f"there is no result (총 검색결과: {total_count}건)")]
-
-            summary_df = response[["ApplicationNumber", "ApplicationDate", "InventionName", "Applicant"]].copy()
-            header = (
-                f"총 검색결과: {total_count}건 (표시: {len(summary_df)}건, 요청: {validated_args.docs_count}건)\n\n"
-            )
-            return [TextContent(type="text", text=header + self.format_table(summary_df))]
+            return self._format_result(response, validated_args.docs_count)
 
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")
@@ -111,15 +118,7 @@ class PatentApplicationNumberSearchTool(ToolHandler):
                 desc_sort=validated_args.desc_sort,
             )
 
-            total_count = response.attrs.get("total_count", len(response))
-            if response.empty:
-                return [TextContent(type="text", text=f"there is no result (총 검색결과: {total_count}건)")]
-
-            summary_df = response[["ApplicationNumber", "ApplicationDate", "InventionName", "Applicant"]].copy()
-            header = (
-                f"총 검색결과: {total_count}건 (표시: {len(summary_df)}건, 요청: {validated_args.docs_count}건)\n\n"
-            )
-            return [TextContent(type="text", text=header + self.format_table(summary_df))]
+            return self._format_result(response, validated_args.docs_count)
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")
             return [TextContent(type="text", text=f"입력값 검증 오류: {str(e)}")]

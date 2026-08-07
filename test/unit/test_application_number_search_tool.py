@@ -1,7 +1,12 @@
-"""Mocked unit tests for PatentApplicationNumberSearchTool covering the
-totalCount header added alongside ipc_search/abstract_search/etc (see
-test_ipc_search_tool.py) -- this tool already had docs_count/docs_start
-wired correctly, so only the totalCount reporting was missing.
+"""Mocked unit tests for PatentApplicationNumberSearchTool.
+
+applicationNumberSearchInfo (the legacy openapi/rest service family) has no
+response.count block -- confirmed live -- so, unlike ipc/abstract/
+agent_search, this tool must not present a fabricated total count. An
+earlier version echoed len(response) back as "총 검색결과: N건", which
+looked like a real total but was really just "however many rows came back
+this time" (capped at docs_count); these tests guard against regressing to
+that.
 """
 
 import pandas as pd
@@ -42,35 +47,28 @@ def test_run_tool_reports_empty_result(monkeypatch):
     result = tool.run_tool({"application_number": "0000000000000"})
 
     assert "there is no result" in result[0].text
-    assert "0건" in result[0].text
 
 
-def test_run_tool_reports_total_count_from_response_attrs(monkeypatch):
+def test_run_tool_does_not_claim_a_total_count(monkeypatch):
     tool = PatentApplicationNumberSearchTool()
-
-    def _fake_sync_search(**kwargs):
-        df = _sample_response()
-        df.attrs["total_count"] = 1
-        return df
-
-    monkeypatch.setattr(tool.api, "sync_search", _fake_sync_search)
+    monkeypatch.setattr(tool.api, "sync_search", lambda **kwargs: _sample_response())
 
     text = tool.run_tool({"application_number": "1020230000001"})[0].text
 
-    assert "1건" in text
+    assert "총 검색결과" not in text
+    assert "totalCount를 제공하지 않아" in text
 
 
 @pytest.mark.asyncio
-async def test_run_tool_async_reports_total_count_from_response_attrs(monkeypatch):
+async def test_run_tool_async_does_not_claim_a_total_count(monkeypatch):
     tool = PatentApplicationNumberSearchTool()
 
     async def _fake_async_search(**kwargs):
-        df = _sample_response()
-        df.attrs["total_count"] = 7
-        return df
+        return _sample_response()
 
     monkeypatch.setattr(tool.api, "async_search", _fake_async_search)
 
     text = (await tool.run_tool_async({"application_number": "1020230000001"}))[0].text
 
-    assert "7건" in text
+    assert "총 검색결과" not in text
+    assert "totalCount를 제공하지 않아" in text

@@ -42,22 +42,24 @@ def test_run_tool_reports_empty_result(monkeypatch):
     result = tool.run_tool({"applicant": "존재하지않는회사"})
 
     assert "there is no result" in result[0].text
-    assert "0건" in result[0].text
 
 
-def test_run_tool_reports_total_count_from_response_attrs(monkeypatch):
+def test_run_tool_does_not_claim_a_total_count(monkeypatch):
+    """applicantNameSearchInfo (the legacy openapi/rest service) has no
+    response.count block -- confirmed live -- so, unlike ipc/abstract/
+    agent_search, this tool must not present a fabricated total. A prior
+    version of this tool echoed len(response) back as "총 검색결과: N건",
+    which looked like a real total but was really just "however many rows
+    came back this time" (capped at docs_count) -- that's what this test
+    guards against regressing to.
+    """
     tool = PatentApplicantSearchTool()
+    monkeypatch.setattr(tool.api, "sync_search", lambda **kwargs: _sample_response())
 
-    def _fake_sync_search(**kwargs):
-        df = _sample_response()
-        df.attrs["total_count"] = 42
-        return df
+    text = tool.run_tool({"applicant": "삼성전자", "docs_count": 1})[0].text
 
-    monkeypatch.setattr(tool.api, "sync_search", _fake_sync_search)
-
-    text = tool.run_tool({"applicant": "삼성전자"})[0].text
-
-    assert "42건" in text
+    assert "총 검색결과" not in text
+    assert "totalCount를 제공하지 않아" in text
 
 
 def test_run_tool_rejects_missing_required_field():
