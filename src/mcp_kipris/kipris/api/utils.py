@@ -10,6 +10,7 @@ import httpx
 import requests
 import xmltodict
 
+from mcp_kipris.kipris.errors import KiprisConnectionError, KiprisHttpError, KiprisParseError, KiprisTimeoutError
 from mcp_kipris.kipris.logging_utils import redact_sensitive_data
 
 logging.basicConfig(
@@ -69,12 +70,11 @@ def get_response(url: str) -> t.Dict:
 
         try:
             dict_type = xmltodict.parse(response_text)
-        except ExpatError:
-            raise Exception(
-                "response is not xml check query url [%s] response [%s]",
-                redact_sensitive_data(url),
-                response_text[0:100],
+        except ExpatError as e:
+            logger.error(
+                "response is not xml — url [%s] response [%s]", redact_sensitive_data(url), response_text[:100]
             )
+            raise KiprisParseError(parse_error=str(e), response_text=response_text) from e
         json_data = json.loads(json.dumps(dict_type))
         result_header = get_nested_key_value(json_data, "response.header", default_value="")
         logger.info("__kipris__:[%s]:[%s] :result header : [%s]", key_str, redact_sensitive_data(url), result_header)
@@ -82,23 +82,33 @@ def get_response(url: str) -> t.Dict:
 
     except requests.exceptions.Timeout as e:
         logger.error(f"타임아웃 발생 (60초 연결 시도, 600초 응답 대기): {str(e)}")
-        return {}
-    except requests.exceptions.ConnectionError as e:
-        logger.error("connectoin Error:[%s]", e)
-        return {}
+        raise KiprisTimeoutError(timeout_seconds=600) from e
     except requests.exceptions.HTTPError as e:
         logger.error("http Error:[%s]", e)
-        return {}
+        raise KiprisHttpError(
+            status_code=response.status_code if response is not None else 0,
+            response_text=response.text if response is not None else "",
+        ) from e
+    except requests.exceptions.ConnectionError as e:
+        logger.error("connectoin Error:[%s]", e)
+        raise KiprisConnectionError(original_error=e) from e
     except requests.exceptions.RequestException as e:
         logger.error("request Exception Error:[%s]", e)
-        return {}
+        raise KiprisConnectionError(original_error=e) from e
+    except (KiprisParseError, KiprisTimeoutError, KiprisHttpError, KiprisConnectionError):
+        raise
     except Exception as e:
+        # A KIPRIS network/response failure must reach the caller as an
+        # error, not disappear into an empty {} that parse_response() then
+        # reads as "matched nothing" — confirmed this was happening for
+        # every exception path here before this fix, so a real timeout or
+        # connection drop looked identical to a genuine empty search result.
         logger.error("Exception Error:[%s]", e)
         logger.error("url error [%s]", redact_sensitive_data(url))
         if response is not None:
             logger.error("response error [%s]", response)
         logger.error(traceback.format_exc())
-        return {}
+        raise
 
 
 async def get_response_async(url: str) -> t.Dict:
@@ -121,11 +131,11 @@ async def get_response_async(url: str) -> t.Dict:
 
         try:
             dict_type = xmltodict.parse(response_text)
-        except ExpatError:
-            raise Exception(
-                f"[async] response is not xml. check query url [{redact_sensitive_data(url)}] "
-                f"response [{response_text[:100]}]"
+        except ExpatError as e:
+            logger.error(
+                "[async] response is not xml — url [%s] response [%s]", redact_sensitive_data(url), response_text[:100]
             )
+            raise KiprisParseError(parse_error=str(e), response_text=response_text) from e
 
         json_data = json.loads(json.dumps(dict_type))
         result_header = get_nested_key_value(json_data, "response.header", default_value="")
@@ -136,14 +146,22 @@ async def get_response_async(url: str) -> t.Dict:
 
     except httpx.TimeoutException as e:
         logger.error(f"[async] 타임아웃 발생 (60초 연결 시도, 600초 응답 대기): {str(e)}")
-        return {}
+        raise KiprisTimeoutError(timeout_seconds=600) from e
+    except httpx.HTTPStatusError as e:
+        logger.error(f"[async] http Error:[{e}]")
+        raise KiprisHttpError(status_code=e.response.status_code, response_text=e.response.text) from e
     except httpx.RequestError as e:
         logger.error(f"[async] 요청 예외 발생: {e}")
-        return {}
+        raise KiprisConnectionError(original_error=e) from e
+    except (KiprisParseError, KiprisTimeoutError, KiprisHttpError, KiprisConnectionError):
+        raise
     except Exception as e:
+        # See the matching comment in get_response() -- a network/response
+        # failure must reach the caller as an error, not disappear into an
+        # empty {} that parse_response() then reads as "matched nothing".
         logger.error(f"[async] Exception Error:[{e}]")
         logger.error(f"[async] url error [{redact_sensitive_data(url)}]")
         if response is not None:
             logger.error(f"[async] response error [{response}]")
         logger.error(traceback.format_exc())
-        return {}
+        raise

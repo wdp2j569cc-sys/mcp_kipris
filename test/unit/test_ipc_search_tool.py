@@ -13,6 +13,7 @@
 import pandas as pd
 import pytest
 
+from mcp_kipris.kipris.errors import KiprisTimeoutError
 from mcp_kipris.kipris.tools.korean.ipc_search_tool import IpcSearchTool
 
 pytestmark = pytest.mark.unit
@@ -113,3 +114,25 @@ def test_empty_response_reports_zero_total_count(monkeypatch):
     text = tool.run_tool({"ipc_number": "H01L"})[0].text
 
     assert "0건" in text
+
+
+def test_network_failure_is_reported_as_an_error_not_as_no_result(monkeypatch):
+    """get_response() used to swallow timeouts/connection errors into an
+    empty {}, which parse_response() then read as "0 matches" -- a real
+    KIPRIS timeout looked identical to "this search genuinely has no
+    results". Now that get_response() raises KiprisTimeoutError instead
+    (see test_api_utils_errors.py), this must surface as an actual error
+    message here, not "there is no result".
+    """
+    tool = IpcSearchTool()
+
+    def _raise_timeout(**kwargs):
+        raise KiprisTimeoutError(timeout_seconds=600)
+
+    monkeypatch.setattr(tool.api, "sync_search", _raise_timeout)
+
+    text = tool.run_tool({"ipc_number": "H01L"})[0].text
+
+    assert "오류가 발생했습니다" in text
+    assert "timeout" in text.lower()
+    assert "there is no result" not in text
