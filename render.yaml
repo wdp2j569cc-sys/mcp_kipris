@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: kipris-patent-mcp
+    runtime: python
+    region: singapore
+    plan: free
+    branch: kipris-streamable-server
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn --factory --app-dir src kipris_mcp.server:create_app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: KIPRIS_API_KEY
+        sync: false # 대시보드에서 직접 입력
+      - key: MCP_AUTH_TOKEN
+        generateValue: true # Render가 무작위 값을 만들어 줌 (Environment 탭에서 확인)
